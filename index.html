@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FormulaTree — JEE Formula Revision</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.18);
+    --accent: #7c6af7;
+    --accent2: #a78bfa;
+    --accent-dim: rgba(124,106,247,0.15);
+    --text: #e8e6f0;
+    --muted: #8b89a0;
+    --muted2: #5a5870;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --rose: #fb7185;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,247,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 clamp(1rem, 4vw, 2.5rem);
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -1px;
+  }
+
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .logo-text span { color: var(--accent2); }
+
+  /* Search bar */
+  .search-wrap {
+    flex: 1;
+    max-width: 420px;
+    position: relative;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  #search {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px 8px 38px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  #search:focus {
+    border-color: var(--accent);
+    background: var(--bg3);
+  }
+
+  #search::placeholder { color: var(--muted2); }
+
+  .search-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    display: none;
+    line-height: 1;
+    padding: 2px 4px;
+  }
+
+  /* ─── BREADCRUMB ─── */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: clamp(0.75rem, 2vw, 1.25rem) clamp(1rem, 4vw, 2.5rem);
+    font-size: 13px;
+    color: var(--muted);
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+
+  .breadcrumb .crumb {
+    cursor: pointer;
+    transition: color 0.15s;
+    color: var(--muted);
+  }
+
+  .breadcrumb .crumb:hover { color: var(--accent2); }
+  .breadcrumb .crumb.active { color: var(--text); cursor: default; }
+  .breadcrumb .sep { color: var(--muted2); }
+
+  /* ─── MAIN CONTAINER ─── */
+  #app {
+    position: relative;
+    z-index: 1;
+    padding: 0 clamp(1rem, 4vw, 2.5rem) 4rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ─── SECTION TITLES ─── */
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  /* ─── SUBJECT CARDS ─── */
+  .subject-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 0.5rem;
+  }
+
+  .subject-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 1.75rem;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .subject-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--card-accent, var(--accent));
+    opacity: 0;
+    transition: opacity 0.2s;
+    border-radius: inherit;
+  }
+
+  .subject-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-hover);
+    background: var(--bg3);
+  }
+
+  .subject-card:hover::before { opacity: 0.04; }
+
+  .subject-card .card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 1.25rem;
+    background: var(--icon-bg, var(--accent-dim));
+  }
+
+  .subject-card h2 {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+
+  .subject-card p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .subject-card .count-badge {
+    display: inline-block;
+    margin-top: 1rem;
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.06);
+    color: var(--muted);
+  }
+
+  /* ─── CHAPTER LIST ─── */
+  .chapter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .chapter-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: transform 0.15s, border-color 0.15s, background 0.15s;
+  }
+
+  .chapter-card:hover {
+    transform: translateX(4px);
+    border-color: var(--border-hover);
+    background: var(--bg3);
+  }
+
+  .chapter-card .ch-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted2);
+    min-width: 24px;
+  }
+
+  .chapter-card .ch-name {
+    font-size: 14px;
+    font-weight: 500;
+    flex: 1;
+  }
+
+  .chapter-card .ch-count {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    background: rgba(255,255,255,0.05);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .chapter-card .ch-arrow {
+    color: var(--muted2);
+    font-size: 14px;
+    transition: transform 0.15s, color 0.15s;
+  }
+
+  .chapter-card:hover .ch-arrow { transform: translateX(3px); color: var(--accent2); }
+
+  /* ─── FORMULA LIST ─── */
+  .formula-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .formula-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .formula-item.open {
+    border-color: rgba(124,106,247,0.35);
+  }
+
+  .formula-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .formula-header:hover { background: rgba(255,255,255,0.02); }
+
+  .formula-tag {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--accent-dim);
+    color: var(--accent2);
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    border: 1px solid rgba(124,106,247,0.2);
+  }
+
+  .formula-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .formula-eq {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent2);
+    opacity: 0.8;
+  }
+
+  .formula-chevron {
+    width: 20px;
+    height: 20px;
+    color: var(--muted2);
+    transition: transform 0.25s, color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .formula-item.open .formula-chevron {
+    transform: rotate(180deg);
+    color: var(--accent);
+  }
+
+  .formula-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+    opacity: 0;
+  }
+
+  .formula-item.open .formula-body {
+    max-height: 600px;
+    opacity: 1;
+  }
+
+  .formula-inner {
+    padding: 0 1.25rem 1.25rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.1rem;
+  }
+
+  .big-formula {
+    font-family: var(--mono);
+    font-size: clamp(20px, 4vw, 28px);
+    color: var(--accent2);
+    text-align: center;
+    background: var(--bg3);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.25rem;
+    letter-spacing: 1px;
+    border: 1px solid rgba(124,106,247,0.15);
+    overflow-x: auto;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 1.25rem;
+  }
+
+  @media (max-width: 500px) { .detail-grid { grid-template-columns: 1fr; } }
+
+  .detail-card {
+    background: var(--bg3);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border);
+  }
+
+  .detail-card h4 {
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .detail-card p {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    opacity: 0.85;
+  }
+
+  .related-formulas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 0.5rem;
+  }
+
+  .rel-pill {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .rel-pill:hover {
+    background: var(--accent-dim);
+    color: var(--accent2);
+    border-color: rgba(124,106,247,0.3);
+  }
+
+  .jee-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    background: rgba(251,191,36,0.1);
+    color: var(--amber);
+    border: 1px solid rgba(251,191,36,0.2);
+    padding: 3px 9px;
+    border-radius: 20px;
+    margin-right: 6px;
+    margin-bottom: 4px;
+  }
+
+  /* ─── SEARCH RESULTS ─── */
+  .search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .search-result-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .search-result-item:hover {
+    background: var(--bg3);
+    border-color: var(--border-hover);
+  }
+
+  .sr-path {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 3px;
+  }
+
+  .sr-name { font-size: 14px; font-weight: 500; }
+
+  .sr-formula {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent2);
+    margin-left: auto;
+    opacity: 0.8;
+  }
+
+  mark {
+    background: rgba(124,106,247,0.25);
+    color: var(--accent2);
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+
+  /* ─── EMPTY / NO RESULTS ─── */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted);
+  }
+
+  .empty-state .e-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.4;
+  }
+
+  .empty-state p { font-size: 14px; }
+
+  /* ─── HERO ─── */
+  .hero {
+    padding: 3rem 0 2rem;
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-family: var(--mono);
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 0.75rem;
+  }
+
+  .hero h1 span { color: var(--accent2); }
+
+  .hero p {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ─── COMING SOON CHIP ─── */
+  .coming-soon {
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.05);
+    color: var(--muted2);
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    display: inline-block;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-up {
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .fade-up:nth-child(1) { animation-delay: 0ms; }
+  .fade-up:nth-child(2) { animation-delay: 60ms; }
+  .fade-up:nth-child(3) { animation-delay: 120ms; }
+  .fade-up:nth-child(4) { animation-delay: 180ms; }
+  .fade-up:nth-child(5) { animation-delay: 240ms; }
+  .fade-up:nth-child(6) { animation-delay: 300ms; }
+  .fade-up:nth-child(7) { animation-delay: 360ms; }
+  .fade-up:nth-child(8) { animation-delay: 420ms; }
+  .fade-up:nth-child(9) { animation-delay: 480ms; }
+  .fade-up:nth-child(10) { animation-delay: 540ms; }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted2); }
+
+  /* ─── MOBILE ─── */
+  @media (max-width: 480px) {
+    .formula-eq { display: none; }
+    .formula-tag { font-size: 11px; padding: 3px 8px; }
+    .formula-name { font-size: 13px; }
+    .hero { padding: 2rem 0 1.5rem; }
+    .detail-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ─── SUBJECT COLOR THEMES ─── */
+  .physics .formula-tag { background: rgba(52,211,153,0.1); color: var(--green); border-color: rgba(52,211,153,0.2); }
+  .physics .big-formula { color: var(--green); border-color: rgba(52,211,153,0.15); }
+  .physics .formula-item.open { border-color: rgba(52,211,153,0.3); }
+  .physics .formula-item.open .formula-chevron { color: var(--green); }
+
+  .math .formula-tag { background: rgba(251,191,36,0.1); color: var(--amber); border-color: rgba(251,191,36,0.2); }
+  .math .big-formula { color: var(--amber); border-color: rgba(251,191,36,0.15); }
+  .math .formula-item.open { border-color: rgba(251,191,36,0.3); }
+  .math .formula-item.open .formula-chevron { color: var(--amber); }
+
+  .chemistry .formula-tag { background: rgba(251,113,133,0.1); color: var(--rose); border-color: rgba(251,113,133,0.2); }
+  .chemistry .big-formula { color: var(--rose); border-color: rgba(251,113,133,0.15); }
+  .chemistry .formula-item.open { border-color: rgba(251,113,133,0.3); }
+  .chemistry .formula-item.open .formula-chevron { color: var(--rose); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" onclick="navigate('home')">
+    <div class="logo-icon">Σ</div>
+    <span class="logo-text">Formula<span>Tree</span></span>
+  </div>
+
+  <div class="search-wrap">
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/>
+    </svg>
+    <input type="text" id="search" placeholder="Search formulas…" autocomplete="off" oninput="handleSearch(this.value)" />
+    <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
+  </div>
+</header>
+
+<nav class="breadcrumb" id="breadcrumb"></nav>
+
+<div id="app"></div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────
+const DATA = {
+  Physics: {
+    color: '#34d399',
+    icon: '⚛',
+    iconBg: 'rgba(52,211,153,0.12)',
+    desc: 'Mechanics, waves, electromagnetism & modern physics',
+    chapters: {
+      Mechanics: {
+        formulas: [
+          {
+            id: 'ke',
+            name: 'Kinetic Energy',
+            equation: 'K = ½mv²',
+            explanation: 'The energy an object possesses due to its motion. Depends on mass and the square of velocity — doubling speed quadruples kinetic energy.',
+            derived: 'Derived from the work-energy theorem: W = ΔKE. Integrating F·dx over the displacement using Newton\'s second law yields K = ½mv².',
+            related: ['Momentum p=mv', 'Work W=Fd', 'Total Energy E=K+U'],
+            jee: ['Energy conservation problems', 'Collision problems (elastic/inelastic)', 'Projectile problems', 'Block-spring systems']
+          },
+          {
+            id: 'mom',
+            name: 'Linear Momentum',
+            equation: 'p = mv',
+            explanation: 'The quantity of motion in a body. A vector quantity — direction same as velocity. Conservation of momentum is one of the most powerful tools in JEE.',
+            derived: 'Newton\'s second law F = dp/dt gives momentum as p = mv for constant mass. It is the first moment of mass with respect to velocity.',
+            related: ['Impulse J=FΔt', 'Kinetic Energy K=½mv²', 'Newton\'s 2nd Law'],
+            jee: ['Collision problems', 'Rocket propulsion', 'Explosion problems', 'Recoil problems']
+          },
+          {
+            id: 'force',
+            name: 'Newton\'s Second Law',
+            equation: 'F = ma',
+            explanation: 'The net force on a body equals the product of its mass and acceleration. The most fundamental equation of classical mechanics.',
+            derived: 'Defined by Newton as F = dp/dt. For constant mass, dp/dt = m·dv/dt = ma.',
+            related: ['Weight W=mg', 'Friction f=μN', 'Centripetal F=mv²/r'],
+            jee: ['Constraint motion', 'Pulley systems', 'Inclined plane problems', 'Free body diagrams']
+          },
+          {
+            id: 'grav',
+            name: 'Gravitational PE',
+            equation: 'U = mgh',
+            explanation: 'Potential energy stored in an object due to its height above a reference. Valid near Earth\'s surface where g ≈ 9.8 m/s² is constant.',
+            derived: 'Work done against gravity W = mgh, stored as potential energy. Rigorously derived from U = −∫F·dr with F = −mg ĵ.',
+            related: ['Kinetic Energy K=½mv²', 'Gravitational F=Gm₁m₂/r²', 'Escape velocity'],
+            jee: ['Energy conservation', 'Inclined plane', 'Vertical circular motion', 'Ball thrown upward']
+          },
+          {
+            id: 'circ',
+            name: 'Centripetal Acceleration',
+            equation: 'a = v²/r',
+            explanation: 'The acceleration directed toward the center of a circular path. Always perpendicular to velocity, it changes direction not speed.',
+            derived: 'By differentiating the position vector r(t) for uniform circular motion twice, the radial component gives aₙ = v²/r = ω²r.',
+            related: ['Centripetal Force F=mv²/r', 'Angular velocity ω=v/r', 'Period T=2πr/v'],
+            jee: ['Vertical circular motion', 'Banked roads', 'Conical pendulum', 'Satellites']
+          },
+          {
+            id: 'proj',
+            name: 'Projectile Range',
+            equation: 'R = v₀²sin2θ/g',
+            explanation: 'Horizontal distance traveled by a projectile. Maximum range at 45°. Complementary angles (θ and 90°−θ) give the same range.',
+            derived: 'Combine R = v₀cosθ · T and T = 2v₀sinθ/g. Substituting gives R = v₀²(2sinθcosθ)/g = v₀²sin2θ/g.',
+            related: ['Max Height H=v₀²sin²θ/2g', 'Time of Flight T=2v₀sinθ/g', 'Trajectory equation'],
+            jee: ['Projectile on inclined plane', 'Relative projectile', 'Finding angle for max range', 'Collision of projectiles']
+          },
+          {
+            id: 'torque',
+            name: 'Torque',
+            equation: 'τ = r × F',
+            explanation: 'The rotational equivalent of force. Its magnitude is τ = rF sinθ. Torque causes angular acceleration in a rigid body.',
+            derived: 'Analogous to F = ma for rotation: τ = Iα. Defined as the cross product τ = r × F where r is the position vector from the pivot.',
+            related: ['Moment of Inertia I=Σmr²', 'Angular Momentum L=Iω', 'Power P=τω'],
+            jee: ['See-saw problems', 'Rolling motion', 'Toppling conditions', 'Angular momentum conservation']
+          },
+          {
+            id: 'mi',
+            name: 'Moment of Inertia (Ring)',
+            equation: 'I = MR²',
+            explanation: 'Rotational inertia of a thin ring about its central axis. All mass is at distance R, so every mass element contributes MR².',
+            derived: 'I = ∫r² dm. For a ring, all r = R, so I = R² ∫dm = MR². Use parallel axis theorem to get I about other axes.',
+            related: ['Disk I=½MR²', 'Sphere I=⅖MR²', 'Torque τ=Iα', 'Parallel Axis I=I_cm+Md²'],
+            jee: ['Rolling without slipping', 'Rotational KE', 'Angular momentum problems', 'Combined translation+rotation']
+          },
+          {
+            id: 'shm',
+            name: 'SHM Acceleration',
+            equation: 'a = −ω²x',
+            explanation: 'In simple harmonic motion, acceleration is always directed toward equilibrium and proportional to displacement. The negative sign means restoring nature.',
+            derived: 'From x = A·sin(ωt+φ), differentiating twice: a = d²x/dt² = −ω²A·sin(ωt+φ) = −ω²x. Condition for SHM: a ∝ −x.',
+            related: ['Period T=2π/ω', 'Velocity v=ω√(A²−x²)', 'Energy E=½mω²A²', 'Spring ω=√(k/m)'],
+            jee: ['Spring systems', 'Pendulum', 'SHM energy', 'Superposition of SHMs']
+          },
+          {
+            id: 'esc',
+            name: 'Escape Velocity',
+            equation: 'vₑ = √(2GM/R)',
+            explanation: 'Minimum speed needed to escape a planet\'s gravitational field without further propulsion. For Earth, vₑ ≈ 11.2 km/s.',
+            derived: 'Set total mechanical energy to zero: ½mv² − GMm/R = 0. Solving for v gives vₑ = √(2GM/R) = √(2gR) near Earth\'s surface.',
+            related: ['Orbital Velocity v=√(GM/r)', 'Gravitational PE U=−GMm/r', 'Binding Energy'],
+            jee: ['Satellite launch', 'Planetary problems', 'Energy at different orbits', 'Black hole concept']
+          }
+        ]
+      },
+      Thermodynamics: { formulas: [] },
+      Optics: { formulas: [] },
+      'Modern Physics': { formulas: [] }
+    }
+  },
+  Mathematics: {
+    color: '#fbbf24',
+    icon: '∫',
+    iconBg: 'rgba(251,191,36,0.12)',
+    desc: 'Calculus, algebra, coordinate geometry & trigonometry',
+    chapters: {
+      'Calculus': { formulas: [] },
+      'Trigonometry': { formulas: [] },
+      'Coordinate Geometry': { formulas: [] },
+      'Algebra': { formulas: [] }
+    }
+  },
+  Chemistry: {
+    color: '#fb7185',
+    icon: '⚗',
+    iconBg: 'rgba(251,113,133,0.12)',
+    desc: 'Physical, organic & inorganic chemistry concepts',
+    chapters: {
+      'Physical Chemistry': { formulas: [] },
+      'Organic Chemistry': { formulas: [] },
+      'Inorganic Chemistry': { formulas: [] },
+      'Electrochemistry': { formulas: [] }
+    }
+  }
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────
+let state = { view: 'home', subject: null, chapter: null };
+let searchQuery = '';
+
+// ─── ROUTER ───────────────────────────────────────────────────────────────
+function navigate(view, subject = null, chapter = null) {
+  state = { view, subject, chapter };
+  searchQuery = '';
+  document.getElementById('search').value = '';
+  document.getElementById('searchClear').style.display = 'none';
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── SEARCH ───────────────────────────────────────────────────────────────
+function handleSearch(val) {
+  searchQuery = val.trim().toLowerCase();
+  document.getElementById('searchClear').style.display = val ? 'block' : 'none';
+  if (searchQuery) {
+    state.view = 'search';
+  } else {
+    state.view = state.subject ? (state.chapter ? 'chapter' : 'subject') : 'home';
+  }
+  render();
+}
+
+function clearSearch() {
+  document.getElementById('search').value = '';
+  handleSearch('');
+}
+
+function getAllFormulas() {
+  const results = [];
+  for (const [subj, subjData] of Object.entries(DATA)) {
+    for (const [chap, chapData] of Object.entries(subjData.chapters)) {
+      for (const f of chapData.formulas) {
+        results.push({ ...f, subject: subj, chapter: chap });
+      }
+    }
+  }
+  return results;
+}
+
+function searchFormulas(query) {
+  return getAllFormulas().filter(f =>
+    f.name.toLowerCase().includes(query) ||
+    f.equation.toLowerCase().includes(query) ||
+    f.explanation.toLowerCase().includes(query) ||
+    f.subject.toLowerCase().includes(query) ||
+    f.chapter.toLowerCase().includes(query)
+  );
+}
+
+function highlight(text, query) {
+  if (!query) return text;
+  const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return text.replace(re, '<mark>$1</mark>');
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────
+function render() {
+  renderBreadcrumb();
+  const app = document.getElementById('app');
+
+  if (state.view === 'search') {
+    renderSearch(app);
+  } else if (state.view === 'home') {
+    renderHome(app);
+  } else if (state.view === 'subject') {
+    renderSubject(app);
+  } else if (state.view === 'chapter') {
+    renderChapter(app);
+  }
+}
+
+function renderBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  let html = `<span class="crumb ${state.view === 'home' ? 'active' : ''}" onclick="navigate('home')">Home</span>`;
+
+  if (state.subject) {
+    html += `<span class="sep">›</span>
+      <span class="crumb ${state.view === 'subject' ? 'active' : ''}" onclick="navigate('subject','${state.subject}')">${state.subject}</span>`;
+  }
+  if (state.chapter) {
+    html += `<span class="sep">›</span>
+      <span class="crumb active">${state.chapter}</span>`;
+  }
+  if (state.view === 'search') {
+    html += `<span class="sep">›</span><span class="crumb active">Search results</span>`;
+  }
+  bc.innerHTML = html;
+}
+
+function renderHome(app) {
+  const subjects = Object.entries(DATA);
+  const totalFormulas = getAllFormulas().length;
+
+  let cards = subjects.map(([name, d], i) => {
+    const chapCount = Object.keys(d.chapters).length;
+    const fCount = Object.values(d.chapters).reduce((a, c) => a + c.formulas.length, 0);
+    return `
+    <div class="subject-card fade-up" style="--card-accent:${d.color}; --icon-bg:${d.iconBg}" onclick="navigate('subject','${name}')">
+      <div class="card-icon">${d.icon}</div>
+      <h2>${name}</h2>
+      <p>${d.desc}</p>
+      <span class="count-badge">${chapCount} chapters · ${fCount > 0 ? fCount + ' formulas' : 'coming soon'}</span>
+    </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="hero fade-up">
+      <h1>Revise <span>smarter.</span></h1>
+      <p>All JEE formulas, organized by subject and chapter. Tap any formula for a full breakdown.</p>
+    </div>
+    <p class="section-title">Subjects</p>
+    <div class="subject-grid">${cards}</div>
+    <p style="text-align:center; font-size:13px; color:var(--muted2); margin-top:2rem; font-family:var(--mono);">${totalFormulas} formulas loaded · more coming soon</p>
+  `;
+}
+
+function renderSubject(app) {
+  const subj = DATA[state.subject];
+  if (!subj) return navigate('home');
+
+  const chaps = Object.entries(subj.chapters);
+  let cards = chaps.map(([name, data], i) => {
+    const count = data.formulas.length;
+    return `
+    <div class="chapter-card fade-up" onclick="${count > 0 ? `navigate('chapter','${state.subject}','${name}')` : ''}">
+      <span class="ch-num">0${i+1}</span>
+      <span class="ch-name">${name}${count === 0 ? '<span class="coming-soon">soon</span>' : ''}</span>
+      ${count > 0 ? `<span class="ch-count">${count}</span><span class="ch-arrow">›</span>` : ''}
+    </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div style="margin-bottom: 1.5rem; margin-top: 0.5rem" class="fade-up">
+      <h2 style="font-family:var(--mono); font-size: clamp(22px,4vw,32px); letter-spacing:-0.5px; margin-bottom:6px;">${state.subject}</h2>
+      <p style="font-size:14px; color:var(--muted);">${subj.desc}</p>
+    </div>
+    <p class="section-title">Chapters</p>
+    <div class="chapter-grid">${cards}</div>
+  `;
+}
+
+function renderChapter(app) {
+  const subj = DATA[state.subject];
+  if (!subj) return navigate('home');
+  const chapter = subj.chapters[state.chapter];
+  if (!chapter) return navigate('subject', state.subject);
+
+  const className = state.subject.toLowerCase().replace(/\s+/g, '');
+  const formulas = chapter.formulas;
+
+  if (formulas.length === 0) {
+    app.innerHTML = `<div class="empty-state"><div class="e-icon">🚧</div><p>Formulas for ${state.chapter} are coming soon!</p></div>`;
+    return;
+  }
+
+  let items = formulas.map((f, i) => formulaCard(f, i, className)).join('');
+
+  app.innerHTML = `
+    <div style="margin-bottom: 1.5rem; margin-top: 0.5rem" class="fade-up">
+      <h2 style="font-family:var(--mono); font-size: clamp(20px,4vw,30px); letter-spacing:-0.5px; margin-bottom:6px;">${state.chapter}</h2>
+      <p style="font-size:13px; color:var(--muted);">${state.subject} · ${formulas.length} formulas</p>
+    </div>
+    <div class="formula-list ${className}">${items}</div>
+  `;
+}
+
+function formulaCard(f, i, className) {
+  const jeeItems = f.jee.map(j => `<span class="jee-tag">⚡ ${j}</span>`).join('');
+  const relItems = f.related.map(r => `<span class="rel-pill">${r}</span>`).join('');
+
+  return `
+  <div class="formula-item fade-up" id="fi-${f.id}">
+    <div class="formula-header" onclick="toggleFormula('${f.id}')">
+      <span class="formula-tag">${f.equation}</span>
+      <span class="formula-name">${f.name}</span>
+      <span class="formula-eq" aria-hidden="true">${f.equation}</span>
+      <svg class="formula-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </div>
+    <div class="formula-body" id="fb-${f.id}">
+      <div class="formula-inner">
+        <div class="big-formula">${f.equation}</div>
+        <div class="detail-grid">
+          <div class="detail-card">
+            <h4>Explanation</h4>
+            <p>${f.explanation}</p>
+          </div>
+          <div class="detail-card">
+            <h4>Derived from</h4>
+            <p>${f.derived}</p>
+          </div>
+        </div>
+        <div class="detail-card" style="margin-bottom:12px">
+          <h4>JEE applications</h4>
+          <div style="margin-top:6px">${jeeItems}</div>
+        </div>
+        <div class="detail-card">
+          <h4>Related formulas</h4>
+          <div class="related-formulas">${relItems}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleFormula(id) {
+  const item = document.getElementById('fi-' + id);
+  if (!item) return;
+  const wasOpen = item.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.formula-item.open').forEach(el => el.classList.remove('open'));
+  // Toggle clicked
+  if (!wasOpen) {
+    item.classList.add('open');
+    setTimeout(() => {
+      const rect = item.getBoundingClientRect();
+      if (rect.top < 70) {
+        window.scrollBy({ top: rect.top - 80, behavior: 'smooth' });
+      }
+    }, 50);
+  }
+}
+
+function renderSearch(app) {
+  const results = searchFormulas(searchQuery);
+
+  if (results.length === 0) {
+    app.innerHTML = `
+      <div class="empty-state fade-up">
+        <div class="e-icon">🔍</div>
+        <p>No formulas found for "<strong>${searchQuery}</strong>"</p>
+      </div>`;
+    return;
+  }
+
+  const items = results.map(f => {
+    const subjectColor = DATA[f.subject]?.color || 'var(--accent2)';
+    return `
+    <div class="search-result-item fade-up" onclick="openFromSearch('${f.subject}','${f.chapter}','${f.id}')">
+      <div style="flex:1; min-width:0;">
+        <div class="sr-path">
+          <span style="color:${subjectColor}">${f.subject}</span>
+          <span style="color:var(--muted2)">›</span>
+          <span>${f.chapter}</span>
+        </div>
+        <div class="sr-name">${highlight(f.name, searchQuery)}</div>
+      </div>
+      <span class="sr-formula">${f.equation}</span>
+    </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <p class="section-title fade-up">${results.length} result${results.length !== 1 ? 's' : ''} for "${searchQuery}"</p>
+    <div class="search-results">${items}</div>
+  `;
+}
+
+function openFromSearch(subject, chapter, id) {
+  state = { view: 'chapter', subject, chapter };
+  searchQuery = '';
+  document.getElementById('search').value = '';
+  document.getElementById('searchClear').style.display = 'none';
+  render();
+  setTimeout(() => {
+    const el = document.getElementById('fi-' + id);
+    if (el) {
+      el.querySelector('.formula-header').click();
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 100);
+}
+
+// ─── KEYBOARD SHORTCUT ───────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    document.getElementById('search').focus();
+  }
+  if (e.key === 'Escape') {
+    document.getElementById('search').blur();
+    if (searchQuery) clearSearch();
+  }
+});
+
+// ─── INIT ────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
