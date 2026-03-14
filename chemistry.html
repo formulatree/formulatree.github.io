@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chemistry — FormulaTree</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="header">
+  <a href="index.html" class="header-logo">
+    <div class="logo-icon">🌿</div>
+    <span class="logo-text">Formula<span>Tree</span></span>
+  </a>
+  <nav class="header-nav">
+    <a href="physics.html" class="nav-link">Physics</a>
+    <a href="mathematics.html" class="nav-link">Mathematics</a>
+    <a href="chemistry.html" class="nav-link active">Chemistry</a>
+  </nav>
+  <button class="search-btn" onclick="openSearch()">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    Search <kbd>⌘K</kbd>
+  </button>
+</header>
+
+<main>
+  <div class="container">
+    <div class="page-header">
+      <div class="breadcrumb" id="breadcrumb">
+        <a href="index.html">Home</a>
+        <span class="sep">/</span>
+        <span class="current">Chemistry</span>
+      </div>
+      <div class="page-title-row">
+        <div class="page-icon" style="background: rgba(251,113,133,0.12);">⚗</div>
+        <div class="page-title">Chemistry</div>
+      </div>
+      <div class="page-sub" id="pageSub">Physical · Inorganic · Organic — 21 chapters · 189 formulas</div>
+
+      <!-- Section Tabs (always visible) -->
+      <div class="section-tabs" id="sectionTabs">
+        <button class="section-tab active" id="tab-Physical" style="--tab-color:#60a5fa" onclick="switchSection('Physical')">💧 Physical</button>
+        <button class="section-tab" id="tab-Inorganic" style="--tab-color:#a78bfa" onclick="switchSection('Inorganic')">🔩 Inorganic</button>
+        <button class="section-tab" id="tab-Organic" style="--tab-color:#34d399" onclick="switchSection('Organic')">🌿 Organic</button>
+      </div>
+    </div>
+
+    <div id="mainView"></div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">FormulaTree · JEE Formula Revision</div>
+</footer>
+
+<!-- Search Modal -->
+<div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)">
+  <div class="search-modal">
+    <div class="search-input-row">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" id="searchInput" placeholder="Search chemistry formulas…" autocomplete="off">
+    </div>
+    <div class="search-results" id="searchResults">
+      <div class="search-empty">Start typing to search…</div>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+const SECTION_COLORS = { Physical: '#60a5fa', Inorganic: '#a78bfa', Organic: '#34d399' };
+const SUBJECT_PAGES = { Physics: 'physics.html', Mathematics: 'mathematics.html', Chemistry: 'chemistry.html' };
+
+let currentSection = 'Physical';
+let currentChapter = null;
+
+// ── URL params ──
+const params = new URLSearchParams(location.search);
+const initSection = params.get('section') || 'Physical';
+const initChapter = params.get('chapter');
+const initId = params.get('id');
+
+// ── Section switch ──
+function switchSection(sec) {
+  currentSection = sec;
+  currentChapter = null;
+  // Update tabs
+  document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + sec).classList.add('active');
+  renderChapters();
+}
+
+// ── Render chapter list ──
+function renderChapters() {
+  const secData = SUBJECTS.Chemistry.sections[currentSection];
+  const color = SECTION_COLORS[currentSection];
+  const chapters = secData.chapters;
+  const count = Object.values(chapters).reduce((s,c) => s + c.formulas.length, 0);
+
+  document.getElementById('pageSub').textContent = `${secData.label} — ${Object.keys(chapters).length} chapters · ${count} formulas`;
+  updateBreadcrumb(null);
+
+  document.getElementById('mainView').innerHTML = `<div class="chapters-grid">
+    ${Object.entries(chapters).map(([name, data]) => `
+      <div class="chapter-card fade-up" style="--chapter-color:${color}" onclick="openChapter('${esc(name)}')">
+        <span class="chapter-name">${name}</span>
+        <span class="chapter-count">${data.formulas.length}</span>
+      </div>`).join('')}
+  </div>`;
+}
+
+// ── Open chapter ──
+function openChapter(chName) {
+  currentChapter = chName;
+  const secData = SUBJECTS.Chemistry.sections[currentSection];
+  const data = secData.chapters[chName];
+  if (!data) return;
+
+  const color = SECTION_COLORS[currentSection];
+  updateBreadcrumb(chName);
+  document.getElementById('pageSub').textContent = `${secData.label} · ${chName}`;
+
+  document.getElementById('mainView').innerHTML = `
+    <button class="back-btn" onclick="goBack()">← Back to chapters</button>
+    <div class="formulas-list">
+      ${data.formulas.map((f, i) => renderFormulaCard(f, i, color)).join('')}
+    </div>`;
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goBack() {
+  currentChapter = null;
+  renderChapters();
+}
+
+// ── Formula card ──
+function renderFormulaCard(f, i, color) {
+  const relatedHtml = (f.related || []).map(r => {
+    const target = resolveRelated(r);
+    if (target) {
+      return `<span class="pill linked" onclick="navigateToFormula('${target.id}','${esc(target.chapter)}','${target.subject}','${target.section||''}')" title="Go to ${r}">↗ ${r}</span>`;
+    }
+    if (POPUP_DEFS && POPUP_DEFS[r]) {
+      return `<span class="pill info-pill" data-pill="${r.replace(/"/g, '&quot;')}" title="Show definition">ℹ ${r}</span>`;
+    }
+    return `<span class="pill">${r}</span>`;
+  }).join('');
+
+  const jeeHtml = (f.jee || []).map(j => `<span class="jee-pill">${j}</span>`).join('');
+
+  return `<div class="formula-card fade-up" id="fc-${f.id}" style="--accent:${color}">
+    <div class="formula-header" onclick="toggleCard('${f.id}')">
+      <span class="formula-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="formula-name">${f.name}</span>
+      <span class="formula-eq-preview" style="color:${color}; background:${color}18">${f.equation}</span>
+      <svg class="formula-toggle" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="formula-body">
+      <div class="formula-eq-full" style="color:${color}; border-color:${color}30">${f.equation}</div>
+      <div class="formula-section">
+        <div class="formula-section-label">Explanation</div>
+        <div class="formula-section-text">${f.explanation}</div>
+      </div>
+      <div class="formula-section">
+        <div class="formula-section-label">Derivation / Origin</div>
+        <div class="formula-section-text">${f.derived}</div>
+      </div>
+      ${relatedHtml ? `<div class="formula-section">
+        <div class="formula-section-label">Related Formulas</div>
+        <div class="pills-row">${relatedHtml}</div>
+      </div>` : ''}
+      ${jeeHtml ? `<div class="formula-section">
+        <div class="formula-section-label">JEE Applications</div>
+        <div class="pills-row">${jeeHtml}</div>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+function toggleCard(id) {
+  const card = document.getElementById('fc-' + id);
+  if (!card) return;
+  const isOpen = card.classList.contains('open');
+  document.querySelectorAll('.formula-card.open').forEach(c => c.classList.remove('open'));
+  if (!isOpen) card.classList.add('open');
+}
+
+function openAndScroll(id) {
+  setTimeout(() => {
+    const card = document.getElementById('fc-' + id);
+    if (card) {
+      document.querySelectorAll('.formula-card.open').forEach(c => c.classList.remove('open'));
+      card.classList.add('open');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 100);
+}
+
+// ── Related resolution ──
+function resolveRelated(name) {
+  const all = getAllFormulas();
+  const nl = name.toLowerCase();
+  let hit = all.find(f => f.name.toLowerCase() === nl);
+  if (hit) return hit;
+  if (name.length >= 5) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0,5)));
+  return hit || null;
+}
+
+function navigateToFormula(id, chapter, subject, section) {
+  if (subject === 'Chemistry') {
+    // Find which section this chapter belongs to
+    let targetSection = section;
+    if (!targetSection) {
+      for (const [sec, sdata] of Object.entries(SUBJECTS.Chemistry.sections)) {
+        if (sdata.chapters[chapter]) { targetSection = sec; break; }
+      }
+    }
+    if (targetSection && targetSection !== currentSection) {
+      switchSection(targetSection);
+    }
+    openChapter(chapter);
+    openAndScroll(id);
+  } else {
+    window.location.href = SUBJECT_PAGES[subject] + '?chapter=' + encodeURIComponent(chapter) + '&id=' + id;
+  }
+}
+
+// ── Breadcrumb ──
+function updateBreadcrumb(chapter) {
+  const secLabel = SUBJECTS.Chemistry.sections[currentSection].label;
+  const bc = document.getElementById('breadcrumb');
+  if (chapter) {
+    bc.innerHTML = `<a href="index.html">Home</a><span class="sep">/</span><a href="chemistry.html">Chemistry</a><span class="sep">/</span><span style="color:${SECTION_COLORS[currentSection]}">${secLabel}</span><span class="sep">/</span><span class="current">${chapter}</span>`;
+  } else {
+    bc.innerHTML = `<a href="index.html">Home</a><span class="sep">/</span><a href="chemistry.html">Chemistry</a><span class="sep">/</span><span class="current">${secLabel}</span>`;
+  }
+}
+
+// ── Search ──
+function openSearch() {
+  document.getElementById('searchOverlay').classList.add('open');
+  document.getElementById('searchInput').focus();
+}
+function closeSearch() {
+  document.getElementById('searchOverlay').classList.remove('open');
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing to search…</div>';
+}
+function closeSearchOutside(e) { if (e.target === document.getElementById('searchOverlay')) closeSearch(); }
+
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+  if (e.key === 'Escape') closeSearch();
+});
+
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  const results = document.getElementById('searchResults');
+  if (!q) { results.innerHTML = '<div class="search-empty">Start typing…</div>'; return; }
+  const all = getAllFormulas();
+  const matches = all.filter(f =>
+    f.name.toLowerCase().includes(q) ||
+    f.equation.toLowerCase().includes(q) ||
+    f.explanation.toLowerCase().includes(q)
+  ).slice(0, 10);
+  if (!matches.length) { results.innerHTML = '<div class="search-empty">No results.</div>'; return; }
+  const icons = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
+  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
+    <div class="search-result-icon">${icons[f.subject]||'📖'}</div>
+    <div>
+      <div class="search-result-name">${f.name}</div>
+      <div class="search-result-eq">${f.equation}</div>
+      <div class="search-result-path">${f.subject} · ${f.section||''} · ${f.chapter}</div>
+    </div></div>`).join('');
+});
+
+function handleSearchResult(subject, chapter, id, section) {
+  closeSearch();
+  if (subject === 'Chemistry') {
+    if (section && section !== currentSection) switchSection(section);
+    openChapter(chapter);
+    openAndScroll(id);
+  } else {
+    window.location.href = SUBJECT_PAGES[subject] + '?chapter=' + encodeURIComponent(chapter) + '&id=' + id;
+  }
+}
+
+function esc(s) { return (s||'').replace(/'/g,"\\'"); }
+
+// ── Init ──
+try {
+  switchSection(initSection);
+  if (initChapter) {
+    openChapter(initChapter);
+    if (initId) openAndScroll(initId);
+  }
+} catch(e) {
+  document.getElementById('mainView').innerHTML = '<div style="color:red;padding:20px;font-family:monospace">ERROR: ' + e.message + '<br>' + e.stack + '</div>';
+}
+</script>
+
+<!-- Pill Popup -->
+<div class="pill-popup-overlay" id="pillPopupOverlay" onclick="closePillPopup()"></div>
+<div class="pill-popup" id="pillPopup" style="display:none">
+  <div class="pill-popup-title">
+    <span id="pillPopupTitle"></span>
+    <button class="pill-popup-close" onclick="closePillPopup()">&#x2715;</button>
+  </div>
+  <div class="pill-popup-body" id="pillPopupBody"></div>
+</div>
+<script src="popup_defs.js"></script>
+<script>
+function showPillPopup(name, x, y) {
+  const def = POPUP_DEFS[name];
+  if (!def) return;
+  document.getElementById("pillPopupTitle").textContent = name;
+  document.getElementById("pillPopupBody").textContent = def;
+  const popup = document.getElementById("pillPopup");
+  popup.style.display = "block";
+  document.getElementById("pillPopupOverlay").classList.add("open");
+  const pw = 340, ph = 160;
+  const left = Math.min(x + 10, window.innerWidth - pw - 16);
+  const top = (y + ph + 10 > window.innerHeight) ? y - ph - 10 : y + 10;
+  popup.style.left = left + "px";
+  popup.style.top = top + "px";
+}
+function closePillPopup() {
+  document.getElementById("pillPopup").style.display = "none";
+  document.getElementById("pillPopupOverlay").classList.remove("open");
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePillPopup(); });
+document.addEventListener("click", e => {
+  const pill = e.target.closest(".info-pill");
+  if (pill) {
+    e.stopPropagation();
+    showPillPopup(pill.dataset.pill, e.clientX, e.clientY);
+  }
+});
+</script>
+
+</body>
+</html>
