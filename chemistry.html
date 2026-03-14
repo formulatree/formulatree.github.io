@@ -142,6 +142,9 @@ function renderFormulaCard(f, i, color) {
     if (target) {
       return `<span class="pill linked" onclick="navigateToFormula('${target.id}','${esc(target.chapter)}','${target.subject}','${target.section||''}')" title="Go to ${r}">↗ ${r}</span>`;
     }
+    if (POPUP_DEFS && POPUP_DEFS[r]) {
+      return `<span class="pill" style="cursor:pointer;border-color:rgba(255,255,255,0.15)" onclick="showPillPopup('${r.replace(/'/g, "\\'")}', event)" title="Show definition">ℹ ${r}</span>`;
+    }
     return `<span class="pill">${r}</span>`;
   }).join('');
 
@@ -199,13 +202,9 @@ function openAndScroll(id) {
 function resolveRelated(name) {
   const all = getAllFormulas();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === 'Chemistry' && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+  let hit = all.find(f => f.name.toLowerCase() === nl);
   if (hit) return hit;
-  if (name.length >= 5) {
-    hit = all.find(f => f.subject === 'Chemistry' && f.name.toLowerCase().startsWith(nl.substring(0,5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0,5)));
-  }
+  if (name.length >= 5) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0,5)));
   return hit || null;
 }
 
@@ -297,5 +296,40 @@ if (initChapter) {
   if (initId) openAndScroll(initId);
 }
 </script>
+
+<!-- Pill Popup -->
+<div class="pill-popup-overlay" id="pillPopupOverlay" onclick="closePillPopup()"></div>
+<div class="pill-popup" id="pillPopup" style="display:none">
+  <div class="pill-popup-title">
+    <span id="pillPopupTitle"></span>
+    <button class="pill-popup-close" onclick="closePillPopup()">&#x2715;</button>
+  </div>
+  <div class="pill-popup-body" id="pillPopupBody"></div>
+</div>
+<script src="popup_defs.js"></script>
+<script>
+function showPillPopup(name, event) {
+  const def = POPUP_DEFS[name];
+  if (!def) return;
+  document.getElementById("pillPopupTitle").textContent = name;
+  document.getElementById("pillPopupBody").textContent = def;
+  const popup = document.getElementById("pillPopup");
+  popup.style.display = "block";
+  document.getElementById("pillPopupOverlay").classList.add("open");
+  const x = event.clientX, y = event.clientY;
+  const pw = 340, ph = 160;
+  const left = Math.min(x + 10, window.innerWidth - pw - 16);
+  const top = (y + ph + 10 > window.innerHeight) ? y - ph - 10 : y + 10;
+  popup.style.left = left + "px";
+  popup.style.top = top + "px";
+  event.stopPropagation();
+}
+function closePillPopup() {
+  document.getElementById("pillPopup").style.display = "none";
+  document.getElementById("pillPopupOverlay").classList.remove("open");
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePillPopup(); });
+</script>
+
 </body>
 </html>

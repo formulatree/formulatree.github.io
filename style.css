@@ -704,6 +704,63 @@ body {
 .fade-up:nth-child(8) { animation-delay: 0.4s; }
 .fade-up:nth-child(9) { animation-delay: 0.45s; }
 
+/* ── Pill Popup ── */
+.pill-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: none;
+}
+.pill-popup-overlay.open { display: block; }
+
+.pill-popup {
+  position: fixed;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  max-width: 340px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.55);
+  z-index: 501;
+  animation: fadeUp 0.15s ease both;
+  pointer-events: all;
+}
+
+.pill-popup-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pill-popup-close {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  line-height: 1;
+  font-family: var(--font-body);
+}
+.pill-popup-close:hover { color: var(--text); }
+
+.pill-popup-body {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
