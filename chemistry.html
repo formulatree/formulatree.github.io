@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Physics — FormulaTree</title>
+<title>Chemistry — FormulaTree</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,9 +15,9 @@
   </a>
   <nav class="header-nav">
     <a class="nav-link" href="index.html">Home</a>
-    <a class="nav-link active" href="physics.html">Physics</a>
+    <a class="nav-link " href="physics.html">Physics</a>
     <a class="nav-link " href="mathematics.html">Mathematics</a>
-    <a class="nav-link " href="chemistry.html">Chemistry</a>
+    <a class="nav-link active" href="chemistry.html">Chemistry</a>
   </nav>
   <div class="search-wrap">
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -34,8 +34,8 @@
 
 <script src="data.js"></script>
 <script>
-const SUBJECT = 'Physics';
-const CLASS_NAME = 'physics'; // CSS class for colour theme
+const SUBJECT = 'Chemistry';
+const CLASS_NAME = 'chemistry'; // CSS class for colour theme
 
 // ─── STATE ──────────────────────────────────────────────────────────────
 // view: 'subject' | 'chapter' | 'search'
@@ -58,7 +58,7 @@ function goSubject() {
   searchQuery = '';
   document.getElementById('search').value = '';
   document.getElementById('searchClear').style.display = 'none';
-  history.pushState(null, '', 'physics.html');
+  history.pushState(null, '', 'chemistry.html');
   render();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -68,7 +68,7 @@ function goChapter(chapterName) {
   searchQuery = '';
   document.getElementById('search').value = '';
   document.getElementById('searchClear').style.display = 'none';
-  history.pushState(null, '', `physics.html?chapter=${encodeURIComponent(chapterName)}`);
+  history.pushState(null, '', `chemistry.html?chapter=${encodeURIComponent(chapterName)}`);
   render();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -83,7 +83,7 @@ function navigateToRelated(label) {
     searchQuery = '';
     document.getElementById('search').value = '';
     document.getElementById('searchClear').style.display = 'none';
-    history.pushState(null, '', `physics.html?chapter=${encodeURIComponent(rec.chapter)}&id=${rec.id}`);
+    history.pushState(null, '', `chemistry.html?chapter=${encodeURIComponent(rec.chapter)}&id=${rec.id}`);
     render();
     openAndScroll(rec.id);
   } else {
@@ -141,9 +141,9 @@ function renderBreadcrumb() {
   let html = `<a href="index.html">Home</a>`;
   html += `<span class="sep">›</span>`;
   if (state.view === 'chapter' || state.view === 'search') {
-    html += `<a href="physics.html" onclick="goSubject();return false;">Physics</a>`;
+    html += `<a href="chemistry.html" onclick="goSubject();return false;">Chemistry</a>`;
   } else {
-    html += `<span class="active">Physics</span>`;
+    html += `<span class="active">Chemistry</span>`;
   }
   if (state.view === 'chapter' && state.chapter) {
     html += `<span class="sep">›</span><span class="active">${state.chapter}</span>`;

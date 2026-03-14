@@ -8,152 +8,121 @@
 </head>
 <body>
 
-<header class="header">
-  <a href="index.html" class="header-logo">
-    <div class="logo-icon">🌿</div>
+<header>
+  <a class="logo" href="index.html">
+    <div class="logo-icon">Σ</div>
     <span class="logo-text">Formula<span>Tree</span></span>
   </a>
   <nav class="header-nav">
-    <a href="physics.html" class="nav-link">Physics</a>
-    <a href="mathematics.html" class="nav-link">Mathematics</a>
-    <a href="chemistry.html" class="nav-link">Chemistry</a>
+    <a class="nav-link active" href="index.html">Home</a>
+    <a class="nav-link" href="physics.html">Physics</a>
+    <a class="nav-link" href="mathematics.html">Mathematics</a>
+    <a class="nav-link" href="chemistry.html">Chemistry</a>
   </nav>
-  <button class="search-btn" onclick="openSearch()">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    Search formulas
-    <kbd>⌘K</kbd>
-  </button>
+  <div class="search-wrap">
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/>
+    </svg>
+    <input type="text" id="search" placeholder="Search all formulas… (⌘K)" autocomplete="off" oninput="handleSearch(this.value)" />
+    <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
+  </div>
 </header>
 
-<main>
-  <section class="container">
-    <div class="hero">
-      <div class="hero-badge">🎯 JEE Main &amp; Advanced</div>
-      <h1>Every formula you need,<br><span>beautifully organized</span></h1>
-      <p class="hero-sub">333 key formulas across Physics, Mathematics, and Chemistry — with derivations, explanations, and JEE applications.</p>
-      <div class="stats-row">
-        <div class="stat"><div class="stat-num">333</div><div class="stat-label">Formulas</div></div>
-        <div class="stat"><div class="stat-num">37</div><div class="stat-label">Chapters</div></div>
-        <div class="stat"><div class="stat-num">3</div><div class="stat-label">Subjects</div></div>
-      </div>
-    </div>
+<nav class="breadcrumb">
+  <span class="active">Home</span>
+</nav>
 
-    <div class="subjects-grid">
-      <a href="physics.html" class="subject-card" style="--card-color: #34d399;">
-        <div class="card-header">
-          <div class="card-icon" style="background: rgba(52,211,153,0.12);">⚛</div>
-          <div class="card-title">Physics</div>
-        </div>
-        <p class="card-desc">Mechanics, Thermal Physics, Electricity &amp; Magnetism, EM Waves, Optics, Modern Physics — all 7 chapters with derivations.</p>
-        <div class="card-meta">
-          <span class="card-tag">7 chapters</span>
-          <span class="card-tag">63 formulas</span>
-        </div>
-      </a>
-
-      <a href="mathematics.html" class="subject-card" style="--card-color: #fbbf24;">
-        <div class="card-header">
-          <div class="card-icon" style="background: rgba(251,191,36,0.12);">∑</div>
-          <div class="card-title">Mathematics</div>
-        </div>
-        <p class="card-desc">Sets &amp; Functions, Algebra, Matrices, Probability, Trigonometry, Geometry, Calculus, Vectors — 9 chapters.</p>
-        <div class="card-meta">
-          <span class="card-tag">9 chapters</span>
-          <span class="card-tag">81 formulas</span>
-        </div>
-      </a>
-
-      <a href="chemistry.html" class="subject-card" style="--card-color: #fb7185;">
-        <div class="card-header">
-          <div class="card-icon" style="background: rgba(251,113,133,0.12);">⚗</div>
-          <div class="card-title">Chemistry</div>
-        </div>
-        <p class="card-desc">Physical, Inorganic &amp; Organic — 21 chapters spanning mole concept to NMR, from periodic trends to reaction mechanisms.</p>
-        <div class="card-meta">
-          <span class="card-tag" style="border-color: rgba(96,165,250,0.3); color: #60a5fa;">7 Physical</span>
-          <span class="card-tag" style="border-color: rgba(167,139,250,0.3); color: #a78bfa;">6 Inorganic</span>
-          <span class="card-tag" style="border-color: rgba(52,211,153,0.3); color: #34d399;">8 Organic</span>
-        </div>
-      </a>
-    </div>
-  </section>
-</main>
-
-<footer class="footer">
-  <div class="container">FormulaTree · JEE Formula Revision · 333 formulas</div>
-</footer>
-
-<!-- Search Modal -->
-<div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)">
-  <div class="search-modal">
-    <div class="search-input-row">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input class="search-input" id="searchInput" placeholder="Search formulas, equations, topics..." autocomplete="off">
-    </div>
-    <div class="search-results" id="searchResults">
-      <div class="search-empty">Start typing to search 333 formulas…</div>
-    </div>
-  </div>
-</div>
+<div id="app"></div>
 
 <script src="data.js"></script>
 <script>
-const SUBJECT_ICONS = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
-const SUBJECT_PAGES = { Physics: 'physics.html', Mathematics: 'mathematics.html', Chemistry: 'chemistry.html' };
+let searchQuery = '';
 
-function openSearch() {
-  document.getElementById('searchOverlay').classList.add('open');
-  document.getElementById('searchInput').focus();
+function handleSearch(val) {
+  searchQuery = val.trim().toLowerCase();
+  document.getElementById('searchClear').style.display = val ? 'block' : 'none';
+  if (searchQuery) renderSearch();
+  else renderHome();
 }
 
-function closeSearch() {
-  document.getElementById('searchOverlay').classList.remove('open');
-  document.getElementById('searchInput').value = '';
-  document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing to search 333 formulas…</div>';
+function clearSearch() {
+  document.getElementById('search').value = '';
+  handleSearch('');
 }
 
-function closeSearchOutside(e) {
-  if (e.target === document.getElementById('searchOverlay')) closeSearch();
+function highlight(text, query) {
+  if (!query) return text;
+  const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return text.replace(re, '<mark>$1</mark>');
+}
+
+function renderHome() {
+  const app = document.getElementById('app');
+  const subjects = Object.entries(DATA);
+  const totalFormulas = getAllFormulas().length;
+
+  const cards = subjects.map(([name, d]) => {
+    const chapCount = Object.keys(d.chapters).length;
+    const fCount = Object.values(d.chapters).reduce((a, c) => a + c.formulas.length, 0);
+    const page = SUBJECT_PAGES[name];
+    return `
+    <a class="subject-card fade-up" href="${page}" style="--card-accent:${d.color}; --icon-bg:${d.iconBg}">
+      <div class="card-icon">${d.icon}</div>
+      <h2>${name}</h2>
+      <p>${d.desc}</p>
+      <span class="count-badge">${chapCount} chapters · ${fCount} formulas</span>
+    </a>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="hero fade-up">
+      <h1>Revise <span>smarter.</span></h1>
+      <p>All JEE formulas, organised by subject and chapter. Tap any formula for a full breakdown.</p>
+    </div>
+    <p class="section-title">Subjects</p>
+    <div class="subject-grid">${cards}</div>
+    <p style="text-align:center;font-size:13px;color:var(--muted2);margin-top:2rem;font-family:var(--mono);">${totalFormulas} formulas loaded · more coming soon</p>
+  `;
+}
+
+function renderSearch() {
+  const app = document.getElementById('app');
+  const results = searchFormulas(searchQuery);
+
+  if (results.length === 0) {
+    app.innerHTML = `<div class="empty-state fade-up"><div class="e-icon">🔍</div><p>No formulas found for "<strong>${searchQuery}</strong>"</p></div>`;
+    return;
+  }
+
+  const items = results.map(f => {
+    const subjectColor = DATA[f.subject]?.color || 'var(--accent2)';
+    const page = SUBJECT_PAGES[f.subject];
+    return `
+    <a class="search-result-item fade-up" href="${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}">
+      <div style="flex:1;min-width:0;">
+        <div class="sr-path">
+          <span style="color:${subjectColor}">${f.subject}</span>
+          <span style="color:var(--muted2)">›</span>
+          <span>${f.chapter}</span>
+        </div>
+        <div class="sr-name">${highlight(f.name, searchQuery)}</div>
+      </div>
+      <span class="sr-formula">${f.equation}</span>
+    </a>`;
+  }).join('');
+
+  app.innerHTML = `
+    <p class="section-title fade-up">${results.length} result${results.length !== 1 ? 's' : ''} for "${searchQuery}"</p>
+    <div class="search-results">${items}</div>
+  `;
 }
 
 document.addEventListener('keydown', e => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
-  if (e.key === 'Escape') closeSearch();
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); document.getElementById('search').focus(); }
+  if (e.key === 'Escape') { document.getElementById('search').blur(); if (searchQuery) clearSearch(); }
 });
 
-document.getElementById('searchInput').addEventListener('input', function() {
-  const q = this.value.toLowerCase().trim();
-  const results = document.getElementById('searchResults');
-  if (!q) {
-    results.innerHTML = '<div class="search-empty">Start typing to search 333 formulas…</div>';
-    return;
-  }
-  const all = getAllFormulas();
-  const matches = all.filter(f =>
-    f.name.toLowerCase().includes(q) ||
-    f.equation.toLowerCase().includes(q) ||
-    f.explanation.toLowerCase().includes(q) ||
-    (f.related || []).some(r => r.toLowerCase().includes(q))
-  ).slice(0, 10);
-
-  if (!matches.length) {
-    results.innerHTML = '<div class="search-empty">No formulas found.</div>';
-    return;
-  }
-
-  results.innerHTML = matches.map(f => {
-    const page = SUBJECT_PAGES[f.subject] || 'index.html';
-    const section = f.section ? `${f.section} · ` : '';
-    return `<div class="search-result" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}'">
-      <div class="search-result-icon">${SUBJECT_ICONS[f.subject] || '📖'}</div>
-      <div>
-        <div class="search-result-name">${f.name}</div>
-        <div class="search-result-eq">${f.equation}</div>
-        <div class="search-result-path">${f.subject} · ${section}${f.chapter}</div>
-      </div>
-    </div>`;
-  }).join('');
-});
+renderHome();
 </script>
 </body>
 </html>
