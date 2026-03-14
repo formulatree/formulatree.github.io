@@ -705,18 +705,18 @@ body {
 .fade-up:nth-child(9) { animation-delay: 0.45s; }
 
 /* ── Pill Popup ── */
+/* FIX 5: overlay hidden by default, shown when .open added */
 .pill-popup-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(4px);
-  display: none; /* Hidden by default */
+  inset: 0;
   z-index: 500;
+  display: none;
+  background: rgba(0,0,0,0.01); /* transparent but catches clicks */
+}
+.pill-popup-overlay.open {
+  display: block;
 }
 
-.pill-popup-overlay.open {
-  display: block; /* Shown when JS adds .open class */
-}
 .pill-popup {
   position: fixed;
   background: var(--surface);

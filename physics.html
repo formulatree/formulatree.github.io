@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Physics — FormulaTree</title>
 <link rel="stylesheet" href="style.css">
+<script src="data.js"></script>
+<script src="popup_defs.js"></script>
 </head>
 <body>
-
 <header class="header">
   <a href="index.html" class="header-logo">
     <div class="logo-icon">🌿</div>
@@ -23,156 +24,144 @@
     Search <kbd>⌘K</kbd>
   </button>
 </header>
-
 <main>
   <div class="container">
-    <div class="page-header" id="pageHeader">
-      <div class="breadcrumb">
-        <a href="index.html">Home</a>
-        <span class="sep">/</span>
-        <span class="current">Physics</span>
+    <div class="page-header">
+      <div class="breadcrumb" id="breadcrumb">
+        <a href="index.html">Home</a><span class="sep">/</span><span class="current">Physics</span>
       </div>
       <div class="page-title-row">
-        <div class="page-icon" style="background: rgba(52,211,153,0.12);">⚛</div>
+        <div class="page-icon" style="background:rgba(52,211,153,0.12);">⚛</div>
         <div class="page-title">Physics</div>
       </div>
       <div class="page-sub">7 chapters · 63 formulas · Click a chapter to explore</div>
     </div>
-
-    <div id="mainView">
-      <!-- Chapter list or formula view rendered here -->
-    </div>
+    <div id="mainView"></div>
   </div>
 </main>
-
 <footer class="footer">
   <div class="container">FormulaTree · JEE Formula Revision</div>
 </footer>
-
-<!-- Search Modal -->
 <div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)">
   <div class="search-modal">
     <div class="search-input-row">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input class="search-input" id="searchInput" placeholder="Search formulas…" autocomplete="off">
     </div>
-    <div class="search-results" id="searchResults">
-      <div class="search-empty">Start typing to search…</div>
-    </div>
+    <div class="search-results" id="searchResults"><div class="search-empty">Start typing to search…</div></div>
   </div>
 </div>
-
-<script src="data.js"></script>
+<div class="pill-popup-overlay" id="pillPopupOverlay" onclick="closePillPopup()"></div>
+<div class="pill-popup" id="pillPopup" style="display:none">
+  <div class="pill-popup-title">
+    <span id="pillPopupTitle"></span>
+    <button class="pill-popup-close" onclick="closePillPopup()">&#x2715;</button>
+  </div>
+  <div class="pill-popup-body" id="pillPopupBody"></div>
+</div>
 <script>
 const SUBJECT_KEY = 'Physics';
 const SUBJECT_COLOR = '#34d399';
 const SUBJECT_PAGES = { Physics: 'physics.html', Mathematics: 'mathematics.html', Chemistry: 'chemistry.html' };
-
-// ── State ──
 let currentChapter = null;
-let openCardId = null;
-
-// ── URL params ──
 const params = new URLSearchParams(location.search);
 const initChapter = params.get('chapter');
 const initId = params.get('id');
 
-// ── Render Chapter List ──
+function esc(s) { return (s || '').replace(/'/g, "\\'"); }
+
+// FIX 2: Traverse both .chapters and .sections structures
+function getAllFormulas() {
+  const results = [];
+  for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    if (sdata.chapters) {
+      for (const [ch, chdata] of Object.entries(sdata.chapters))
+        for (const f of chdata.formulas) results.push({ subject: subj, chapter: ch, ...f });
+    } else if (sdata.sections) {
+      for (const [sec, secdata] of Object.entries(sdata.sections))
+        for (const [ch, chdata] of Object.entries(secdata.chapters))
+          for (const f of chdata.formulas) results.push({ subject: subj, section: sec, chapter: ch, ...f });
+    }
+  }
+  return results;
+}
+
+function resolveRelated(name) {
+  const all = getAllFormulas();
+  const nl = name.toLowerCase();
+  let hit = all.find(f => f.subject === SUBJECT_KEY && f.name.toLowerCase() === nl);
+  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+  if (!hit && name.length >= 5) {
+    hit = all.find(f => f.subject === SUBJECT_KEY && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+  }
+  return hit || null;
+}
+
+function updateBreadcrumb(chapter) {
+  const bc = document.getElementById('breadcrumb');
+  bc.innerHTML = chapter
+    ? `<a href="index.html">Home</a><span class="sep">/</span><a href="physics.html">Physics</a><span class="sep">/</span><span class="current">${chapter}</span>`
+    : `<a href="index.html">Home</a><span class="sep">/</span><span class="current">Physics</span>`;
+}
+
+function renderFormulaCard(f, i) {
+  // FIX 1: POPUP_DEFS guaranteed available (loaded in <head>)
+  const relatedHtml = (f.related || []).map(r => {
+    const target = resolveRelated(r);
+    if (target) return `<span class="pill linked" onclick="navigateToFormula('${target.id}','${esc(target.chapter)}','${target.subject}')" title="Go to ${r}">&#8599; ${r}</span>`;
+    if (typeof POPUP_DEFS !== 'undefined' && POPUP_DEFS[r]) return `<span class="pill info-pill" data-pill="${r.replace(/"/g,'&quot;')}" title="Show definition">&#x2139; ${r}</span>`;
+    return `<span class="pill">${r}</span>`;
+  }).join('');
+  const jeeHtml = (f.jee || []).map(j => `<span class="jee-pill">${j}</span>`).join('');
+  return `<div class="formula-card fade-up" id="fc-${f.id}">
+    <div class="formula-header" onclick="toggleCard('${f.id}')">
+      <span class="formula-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="formula-name">${f.name}</span>
+      <span class="formula-eq-preview" style="color:${SUBJECT_COLOR};background:rgba(52,211,153,0.08)">${f.equation}</span>
+      <svg class="formula-toggle" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="formula-body">
+      <div class="formula-eq-full" style="color:${SUBJECT_COLOR};border-color:rgba(52,211,153,0.2)">${f.equation}</div>
+      <div class="formula-section"><div class="formula-section-label">Explanation</div><div class="formula-section-text">${f.explanation}</div></div>
+      <div class="formula-section"><div class="formula-section-label">Derivation / Origin</div><div class="formula-section-text">${f.derived}</div></div>
+      ${relatedHtml ? `<div class="formula-section"><div class="formula-section-label">Related Formulas</div><div class="pills-row">${relatedHtml}</div></div>` : ''}
+      ${jeeHtml ? `<div class="formula-section"><div class="formula-section-label">JEE Applications</div><div class="pills-row">${jeeHtml}</div></div>` : ''}
+    </div>
+  </div>`;
+}
+
 function renderChapters() {
   const chapters = SUBJECTS[SUBJECT_KEY].chapters;
-  const mainView = document.getElementById('mainView');
-
-  mainView.innerHTML = `<div class="chapters-grid">
-    ${Object.entries(chapters).map(([name, data], i) => `
+  document.getElementById('mainView').innerHTML = `<div class="chapters-grid">
+    ${Object.entries(chapters).map(([name, data]) => `
       <div class="chapter-card fade-up" style="--chapter-color:${SUBJECT_COLOR}" onclick="openChapter('${esc(name)}')">
         <span class="chapter-name">${name}</span>
         <span class="chapter-count">${data.formulas.length}</span>
       </div>`).join('')}
   </div>`;
-
   updateBreadcrumb(null);
   currentChapter = null;
 }
 
-// ── Render Formulas ──
+// FIX 4: Grabs chapter from SUBJECTS and injects formula cards into DOM
 function openChapter(chName) {
   currentChapter = chName;
   const data = SUBJECTS[SUBJECT_KEY].chapters[chName];
   if (!data) return;
-
   updateBreadcrumb(chName);
-  renderFormulas(data.formulas, chName);
-
-  // scroll to top
+  document.getElementById('mainView').innerHTML = `
+    <button class="back-btn" onclick="renderChapters()">&#8592; Back to chapters</button>
+    <div class="formulas-list">${data.formulas.map((f, i) => renderFormulaCard(f, i)).join('')}</div>`;
   window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function renderFormulas(formulas, chName) {
-  const mainView = document.getElementById('mainView');
-  mainView.innerHTML = `
-    <button class="back-btn" onclick="renderChapters()">
-      ← Back to chapters
-    </button>
-    <div class="formulas-list">
-      ${formulas.map((f, i) => renderFormulaCard(f, i)).join('')}
-    </div>`;
-}
-
-function renderFormulaCard(f, i) {
-  const relatedHtml = (f.related || []).map(r => {
-    const target = resolveRelated(r);
-    if (target) {
-      return `<span class="pill linked" onclick="navigateToFormula('${target.id}','${esc(target.chapter)}','${target.subject}')" title="Go to ${r}">↗ ${r}</span>`;
-    }
-    if (POPUP_DEFS && POPUP_DEFS[r]) {
-      return `<span class="pill info-pill" data-pill="${r.replace(/"/g, '&quot;')}" title="Show definition">ℹ ${r}</span>`;
-    }
-    return `<span class="pill">${r}</span>`;
-  }).join('');
-
-  const jeeHtml = (f.jee || []).map(j => `<span class="jee-pill">${j}</span>`).join('');
-
-  return `<div class="formula-card fade-up" id="fc-${f.id}">
-    <div class="formula-header" onclick="toggleCard('${f.id}')">
-      <span class="formula-num">${String(i+1).padStart(2,'0')}</span>
-      <span class="formula-name">${f.name}</span>
-      <span class="formula-eq-preview">${f.equation}</span>
-      <svg class="formula-toggle" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div class="formula-body">
-      <div class="formula-eq-full">${f.equation}</div>
-      <div class="formula-section">
-        <div class="formula-section-label">Explanation</div>
-        <div class="formula-section-text">${f.explanation}</div>
-      </div>
-      <div class="formula-section">
-        <div class="formula-section-label">Derivation / Origin</div>
-        <div class="formula-section-text">${f.derived}</div>
-      </div>
-      ${relatedHtml ? `<div class="formula-section">
-        <div class="formula-section-label">Related Formulas</div>
-        <div class="pills-row">${relatedHtml}</div>
-      </div>` : ''}
-      ${jeeHtml ? `<div class="formula-section">
-        <div class="formula-section-label">JEE Applications</div>
-        <div class="pills-row">${jeeHtml}</div>
-      </div>` : ''}
-    </div>
-  </div>`;
 }
 
 function toggleCard(id) {
   const card = document.getElementById('fc-' + id);
   if (!card) return;
   const isOpen = card.classList.contains('open');
-  // close all
   document.querySelectorAll('.formula-card.open').forEach(c => c.classList.remove('open'));
-  if (!isOpen) {
-    card.classList.add('open');
-    openCardId = id;
-  } else {
-    openCardId = null;
-  }
+  if (!isOpen) card.classList.add('open');
 }
 
 function openAndScroll(id) {
@@ -183,41 +172,15 @@ function openAndScroll(id) {
       card.classList.add('open');
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, 100);
-}
-
-// ── Related navigation ──
-function resolveRelated(name) {
-  const all = getAllFormulas();
-  const nl = name.toLowerCase();
-  // exact match
-  let hit = all.find(f => f.name.toLowerCase() === nl);
-  if (hit) return hit;
-  // prefix
-  if (name.length >= 5) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0,5)));
-  return hit || null;
+  }, 150);
 }
 
 function navigateToFormula(id, chapter, subject) {
-  if (subject === SUBJECT_KEY) {
-    openChapter(chapter);
-    openAndScroll(id);
-  } else {
-    window.location.href = SUBJECT_PAGES[subject] + '?chapter=' + encodeURIComponent(chapter) + '&id=' + id;
-  }
+  if (subject === SUBJECT_KEY) { openChapter(chapter); openAndScroll(id); }
+  else { window.location.href = SUBJECT_PAGES[subject] + '?chapter=' + encodeURIComponent(chapter) + '&id=' + id; }
 }
 
-// ── Breadcrumb ──
-function updateBreadcrumb(chapter) {
-  const bc = document.querySelector('.breadcrumb');
-  if (chapter) {
-    bc.innerHTML = `<a href="index.html">Home</a><span class="sep">/</span><a href="physics.html">Physics</a><span class="sep">/</span><span class="current">${chapter}</span>`;
-  } else {
-    bc.innerHTML = `<a href="index.html">Home</a><span class="sep">/</span><span class="current">Physics</span>`;
-  }
-}
-
-// ── Search ──
+// FIX 3: openSearch and closeSearch defined here
 function openSearch() {
   document.getElementById('searchOverlay').classList.add('open');
   document.getElementById('searchInput').focus();
@@ -225,102 +188,61 @@ function openSearch() {
 function closeSearch() {
   document.getElementById('searchOverlay').classList.remove('open');
   document.getElementById('searchInput').value = '';
-  document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing to search…</div>';
+  document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing to search\u2026</div>';
 }
 function closeSearchOutside(e) { if (e.target === document.getElementById('searchOverlay')) closeSearch(); }
 
 document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
-  if (e.key === 'Escape') closeSearch();
+  if (e.key === 'Escape') { closeSearch(); closePillPopup(); }
 });
 
 document.getElementById('searchInput').addEventListener('input', function() {
   const q = this.value.toLowerCase().trim();
   const results = document.getElementById('searchResults');
-  if (!q) { results.innerHTML = '<div class="search-empty">Start typing…</div>'; return; }
-  const all = getAllFormulas();
+  if (!q) { results.innerHTML = '<div class="search-empty">Start typing\u2026</div>'; return; }
+  const all = getAllFormulas(); // FIX 2: now returns chemistry too
   const matches = all.filter(f =>
-    f.name.toLowerCase().includes(q) ||
-    f.equation.toLowerCase().includes(q) ||
-    f.explanation.toLowerCase().includes(q)
+    f.name.toLowerCase().includes(q) || f.equation.toLowerCase().includes(q) || f.explanation.toLowerCase().includes(q)
   ).slice(0, 10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
-  const icons = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
-  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult(event,'${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
-    <div class="search-result-icon">${icons[f.subject]||'📖'}</div>
-    <div>
-      <div class="search-result-name">${f.name}</div>
-      <div class="search-result-eq">${f.equation}</div>
-      <div class="search-result-path">${f.subject} · ${f.chapter}</div>
-    </div></div>`).join('');
+  const icons = { Physics: '\u26DB', Mathematics: '\u2211', Chemistry: '\u2697' };
+  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
+    <div class="search-result-icon">${icons[f.subject]||'\uD83D\uDCDA'}</div>
+    <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} \xB7 ${f.chapter}</div></div>
+  </div>`).join('');
 });
 
-function handleSearchResult(e, subject, chapter, id, section) {
+function handleSearchResult(subject, chapter, id, section) {
   closeSearch();
-  if (subject === SUBJECT_KEY) {
-    openChapter(chapter);
-    openAndScroll(id);
-  } else {
-    const pages = SUBJECT_PAGES;
-    let url = pages[subject] + '?chapter=' + encodeURIComponent(chapter) + '&id=' + id;
-    if (section) url += '&section=' + encodeURIComponent(section);
-    window.location.href = url;
-  }
+  if (subject === SUBJECT_KEY) { openChapter(chapter); openAndScroll(id); }
+  else { let url = SUBJECT_PAGES[subject] + '?chapter=' + encodeURIComponent(chapter) + '&id=' + id; if (section) url += '&section=' + encodeURIComponent(section); window.location.href = url; }
 }
 
-function esc(s) { return (s||'').replace(/'/g,"\\'"); }
-
-// ── Init ──
-try {
-  renderChapters();
-  if (initChapter) {
-    openChapter(initChapter);
-    if (initId) openAndScroll(initId);
-  }
-} catch(e) {
-  document.getElementById('mainView').innerHTML = 
-    '<div style="color:red;padding:20px;font-family:monospace">ERROR: ' + e.message + '<br>' + e.stack + '</div>';
-}
-</script>
-
-<!-- Pill Popup -->
-<div class="pill-popup-overlay" id="pillPopupOverlay" onclick="closePillPopup()"></div>
-<div class="pill-popup" id="pillPopup" style="display:none">
-  <div class="pill-popup-title">
-    <span id="pillPopupTitle"></span>
-    <button class="pill-popup-close" onclick="closePillPopup()">&#x2715;</button>
-  </div>
-  <div class="pill-popup-body" id="pillPopupBody"></div>
-</div>
-<script src="popup_defs.js"></script>
-<script>
 function showPillPopup(name, x, y) {
-  const def = POPUP_DEFS[name];
-  if (!def) return;
-  document.getElementById("pillPopupTitle").textContent = name;
-  document.getElementById("pillPopupBody").textContent = def;
-  const popup = document.getElementById("pillPopup");
-  popup.style.display = "block";
-  document.getElementById("pillPopupOverlay").classList.add("open");
-  const pw = 340, ph = 160;
-  const left = Math.min(x + 10, window.innerWidth - pw - 16);
-  const top = (y + ph + 10 > window.innerHeight) ? y - ph - 10 : y + 10;
-  popup.style.left = left + "px";
-  popup.style.top = top + "px";
+  if (typeof POPUP_DEFS === 'undefined' || !POPUP_DEFS[name]) return;
+  document.getElementById('pillPopupTitle').textContent = name;
+  document.getElementById('pillPopupBody').textContent = POPUP_DEFS[name];
+  const popup = document.getElementById('pillPopup');
+  popup.style.display = 'block';
+  document.getElementById('pillPopupOverlay').classList.add('open');
+  const left = Math.min(x + 10, window.innerWidth - 356);
+  const top = (y + 170 > window.innerHeight) ? y - 170 : y + 10;
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
 }
 function closePillPopup() {
-  document.getElementById("pillPopup").style.display = "none";
-  document.getElementById("pillPopupOverlay").classList.remove("open");
+  document.getElementById('pillPopup').style.display = 'none';
+  document.getElementById('pillPopupOverlay').classList.remove('open');
 }
-document.addEventListener("keydown", e => { if (e.key === "Escape") closePillPopup(); });
-document.addEventListener("click", e => {
-  const pill = e.target.closest(".info-pill");
-  if (pill) {
-    e.stopPropagation();
-    showPillPopup(pill.dataset.pill, e.clientX, e.clientY);
-  }
+document.addEventListener('click', e => {
+  const pill = e.target.closest('.info-pill');
+  if (pill) { e.stopPropagation(); showPillPopup(pill.dataset.pill, e.clientX, e.clientY); }
 });
-</script>
 
+// ── Init ──
+renderChapters();
+if (initChapter) { openChapter(initChapter); if (initId) openAndScroll(initId); }
+</script>
 </body>
 </html>
