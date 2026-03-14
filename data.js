@@ -85,20 +85,17 @@ const SUBJECTS = {
 
 function getAllFormulas() {
   const results = [];
-  const s = SUBJECTS;
-  for (const [subj, sdata] of Object.entries(s)) {
+  for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
+      // Physics and Math
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        chdata.formulas.forEach(f => results.push({ subject: subj, chapter: ch, ...f }));
       }
     } else if (sdata.sections) {
+      // Chemistry
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          chdata.formulas.forEach(f => results.push({ subject: subj, chapter: ch, section: sec, ...f }));
         }
       }
     }
