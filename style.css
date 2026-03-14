@@ -707,12 +707,16 @@ body {
 /* ── Pill Popup ── */
 .pill-popup-overlay {
   position: fixed;
-  inset: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  display: none; /* Hidden by default */
   z-index: 500;
-  display: none;
 }
-.pill-popup-overlay.open { display: block; }
 
+.pill-popup-overlay.open {
+  display: block; /* Shown when JS adds .open class */
+}
 .pill-popup {
   position: fixed;
   background: var(--surface);
