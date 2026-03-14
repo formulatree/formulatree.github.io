@@ -109,3 +109,57 @@ function getAllFormulas() {
 function getFormulaById(id) {
   return getAllFormulas().find(f => f.id === id) || null;
 }
+// --- Search Modal Logic ---
+function openSearch() {
+    const searchModal = document.getElementById('searchModal');
+    if (searchModal) {
+        searchModal.style.display = 'flex';
+        document.getElementById('searchInput').focus();
+    }
+}
+
+function closeSearch() {
+    const searchModal = document.getElementById('searchModal');
+    if (searchModal) searchModal.style.display = 'none';
+}
+
+// --- Dynamic Content Loader ---
+// This function populates the .container in physics.html, math.html, etc.
+function loadSubjectPageContent(subjectName) {
+    const subjectData = SUBJECTS[subjectName];
+    const container = document.querySelector('.container');
+    if (!subjectData || !container) return;
+
+    // Create a grid for formulas
+    let html = `<div class="formula-grid">`;
+
+    // Handle nested Chemistry structure vs flat Physics/Math
+    const categories = subjectData.chapters || subjectData.sections;
+    
+    for (const [key, data] of Object.entries(categories)) {
+        // If it's Chemistry sections, we need to loop one level deeper
+        const chapters = data.chapters || { [key]: data };
+        
+        for (const [chName, chData] of Object.entries(chapters)) {
+            chData.formulas.forEach(f => {
+                html += `
+                <div class="formula-card" id="${f.id}">
+                    <h3>${f.name}</h3>
+                    <code class="equation">${f.equation}</code>
+                    <p class="explanation">${f.explanation}</p>
+                    <div class="pills">
+                        ${f.related.map(r => `<span class="pill" onclick="showPillPopup('${r}', event.pageX, event.pageY)">${r}</span>`).join('')}
+                    </div>
+                </div>`;
+            });
+        }
+    }
+    html += `</div>`;
+    container.innerHTML += html;
+}
+
+// Initialize based on current page
+window.onload = () => {
+    const title = document.title.split(' — ')[0]; // Gets "Physics", "Chemistry", etc.
+    if (SUBJECTS[title]) loadSubjectPageContent(title);
+};
