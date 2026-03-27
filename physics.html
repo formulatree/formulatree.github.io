@@ -70,34 +70,6 @@ const initId = params.get('id');
 
 function esc(s) { return (s || '').replace(/'/g, "\\'"); }
 
-// FIX 2: Traverse both .chapters and .sections structures
-function getAllFormulas() {
-  const results = [];
-  for (const [subj, sdata] of Object.entries(SUBJECTS)) {
-    if (sdata.chapters) {
-      for (const [ch, chdata] of Object.entries(sdata.chapters))
-        for (const f of chdata.formulas) results.push({ subject: subj, chapter: ch, ...f });
-    } else if (sdata.sections) {
-      for (const [sec, secdata] of Object.entries(sdata.sections))
-        for (const [ch, chdata] of Object.entries(secdata.chapters))
-          for (const f of chdata.formulas) results.push({ subject: subj, section: sec, chapter: ch, ...f });
-    }
-  }
-  return results;
-}
-
-function resolveRelated(name) {
-  const all = getAllFormulas();
-  const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === SUBJECT_KEY && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === SUBJECT_KEY && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-  }
-  return hit || null;
-}
-
 function updateBreadcrumb(chapter) {
   const bc = document.getElementById('breadcrumb');
   bc.innerHTML = chapter
@@ -106,9 +78,8 @@ function updateBreadcrumb(chapter) {
 }
 
 function renderFormulaCard(f, i) {
-  // FIX 1: POPUP_DEFS guaranteed available (loaded in <head>)
   const relatedHtml = (f.related || []).map(r => {
-    const target = resolveRelated(r);
+    const target = resolveGlobalRelated(r, 'Physics');
     if (target) return `<span class="pill linked" onclick="navigateToFormula('${target.id}','${esc(target.chapter)}','${target.subject}')" title="Go to ${r}">&#8599; ${r}</span>`;
     if (typeof POPUP_DEFS !== 'undefined' && POPUP_DEFS[r]) return `<span class="pill info-pill" data-pill="${r.replace(/"/g,'&quot;')}" title="Show definition">&#x2139; ${r}</span>`;
     return `<span class="pill">${r}</span>`;
@@ -144,7 +115,6 @@ function renderChapters() {
   currentChapter = null;
 }
 
-// FIX 4: Grabs chapter from SUBJECTS and injects formula cards into DOM
 function openChapter(chName) {
   currentChapter = chName;
   const data = SUBJECTS[SUBJECT_KEY].chapters[chName];
@@ -180,7 +150,6 @@ function navigateToFormula(id, chapter, subject) {
   else { window.location.href = SUBJECT_PAGES[subject] + '?chapter=' + encodeURIComponent(chapter) + '&id=' + id; }
 }
 
-// FIX 3: openSearch and closeSearch defined here
 function openSearch() {
   document.getElementById('searchOverlay').classList.add('open');
   document.getElementById('searchInput').focus();
@@ -188,7 +157,7 @@ function openSearch() {
 function closeSearch() {
   document.getElementById('searchOverlay').classList.remove('open');
   document.getElementById('searchInput').value = '';
-  document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing to search\u2026</div>';
+  document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing to search…</div>';
 }
 function closeSearchOutside(e) { if (e.target === document.getElementById('searchOverlay')) closeSearch(); }
 
@@ -200,16 +169,16 @@ document.addEventListener('keydown', e => {
 document.getElementById('searchInput').addEventListener('input', function() {
   const q = this.value.toLowerCase().trim();
   const results = document.getElementById('searchResults');
-  if (!q) { results.innerHTML = '<div class="search-empty">Start typing\u2026</div>'; return; }
-  const all = getAllFormulas(); // FIX 2: now returns chemistry too
+  if (!q) { results.innerHTML = '<div class="search-empty">Start typing…</div>'; return; }
+  const all = getAllFormulas();
   const matches = all.filter(f =>
     f.name.toLowerCase().includes(q) || f.equation.toLowerCase().includes(q) || f.explanation.toLowerCase().includes(q)
   ).slice(0, 10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
-  const icons = { Physics: '\u26DB', Mathematics: '\u2211', Chemistry: '\u2697' };
+  const icons = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
   results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
-    <div class="search-result-icon">${icons[f.subject]||'\uD83D\uDCDA'}</div>
-    <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} \xB7 ${f.chapter}</div></div>
+    <div class="search-result-icon">${icons[f.subject]||'📖'}</div>
+    <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} · ${f.chapter}</div></div>
   </div>`).join('');
 });
 
@@ -240,7 +209,6 @@ document.addEventListener('click', e => {
   if (pill) { e.stopPropagation(); showPillPopup(pill.dataset.pill, e.clientX, e.clientY); }
 });
 
-// ── Init ──
 renderChapters();
 if (initChapter) { openChapter(initChapter); if (initId) openAndScroll(initId); }
 </script>

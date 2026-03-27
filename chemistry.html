@@ -71,45 +71,17 @@ let currentSection = 'Physical';
 let currentChapter = null;
 
 const params = new URLSearchParams(location.search);
-const initSection = params.get('section') || 'Physical';
 const initChapter = params.get('chapter');
 const initId = params.get('id');
 
 function esc(s) { return (s || '').replace(/'/g, "\\'"); }
 
-// FIX 2: getAllFormulas correctly traverses .sections for chemistry
-function getAllFormulas() {
-  const results = [];
-  for (const [subj, sdata] of Object.entries(SUBJECTS)) {
-    if (sdata.chapters) {
-      for (const [ch, chdata] of Object.entries(sdata.chapters))
-        for (const f of chdata.formulas) results.push({ subject: subj, chapter: ch, ...f });
-    } else if (sdata.sections) {
-      for (const [sec, secdata] of Object.entries(sdata.sections))
-        for (const [ch, chdata] of Object.entries(secdata.chapters))
-          for (const f of chdata.formulas) results.push({ subject: subj, section: sec, chapter: ch, ...f });
-    }
-  }
-  return results;
-}
-
-function resolveRelated(name) {
-  const all = getAllFormulas();
-  const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === 'Chemistry' && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === 'Chemistry' && f.name.toLowerCase().startsWith(nl.substring(0,5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0,5)));
-  }
-  return hit || null;
-}
-
 function switchSection(sec) {
   currentSection = sec;
   currentChapter = null;
   document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-' + sec).classList.add('active');
+  const activeTab = document.getElementById('tab-' + sec);
+  if(activeTab) activeTab.classList.add('active');
   renderChapters();
 }
 
@@ -127,7 +99,7 @@ function updateBreadcrumb(chapter) {
 function renderFormulaCard(f, i) {
   const color = SECTION_COLORS[currentSection];
   const relatedHtml = (f.related || []).map(r => {
-    const target = resolveRelated(r);
+    const target = resolveGlobalRelated(r, 'Chemistry');
     if (target) return `<span class="pill linked" onclick="navigateToFormula('${target.id}','${esc(target.chapter)}','${target.subject}','${target.section||''}')">&#8599; ${r}</span>`;
     if (typeof POPUP_DEFS !== 'undefined' && POPUP_DEFS[r]) return `<span class="pill info-pill" data-pill="${r.replace(/"/g,'&quot;')}" title="Show definition">&#x2139; ${r}</span>`;
     return `<span class="pill">${r}</span>`;
@@ -166,7 +138,6 @@ function renderChapters() {
   </div>`;
 }
 
-// FIX 4: For chemistry, looks inside sections to find the correct chapter
 function openChapter(chName) {
   currentChapter = chName;
   const data = SUBJECTS.Chemistry.sections[currentSection].chapters[chName];
@@ -202,7 +173,6 @@ function openAndScroll(id) {
 
 function navigateToFormula(id, chapter, subject, section) {
   if (subject === 'Chemistry') {
-    // Find which section this chapter belongs to if not provided
     let targetSection = section;
     if (!targetSection) {
       for (const [sec, sdata] of Object.entries(SUBJECTS.Chemistry.sections)) {
@@ -217,7 +187,6 @@ function navigateToFormula(id, chapter, subject, section) {
   }
 }
 
-// FIX 3: openSearch and closeSearch defined
 function openSearch() { document.getElementById('searchOverlay').classList.add('open'); document.getElementById('searchInput').focus(); }
 function closeSearch() { document.getElementById('searchOverlay').classList.remove('open'); document.getElementById('searchInput').value = ''; document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing…</div>'; }
 function closeSearchOutside(e) { if (e.target === document.getElementById('searchOverlay')) closeSearch(); }
@@ -269,8 +238,14 @@ document.addEventListener('click', e => {
   if (pill) { e.stopPropagation(); showPillPopup(pill.dataset.pill, e.clientX, e.clientY); }
 });
 
-// Init
-switchSection(initSection);
+// Init - Safe Deep Linking Route
+let startSection = params.get('section');
+if (!startSection && initChapter) {
+  for (const [sec, sdata] of Object.entries(SUBJECTS.Chemistry.sections)) {
+    if (sdata.chapters[initChapter]) { startSection = sec; break; }
+  }
+}
+switchSection(startSection || 'Physical');
 if (initChapter) { openChapter(initChapter); if (initId) openAndScroll(initId); }
 </script>
 </body>

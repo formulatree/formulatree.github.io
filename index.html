@@ -143,13 +143,14 @@ document.getElementById('searchInput').addEventListener('input', function() {
 
   results.innerHTML = matches.map(f => {
     const page = SUBJECT_PAGES[f.subject] || 'index.html';
-    const section = f.section ? `${f.section} · ` : '';
-    return `<div class="search-result" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}'">
+    const sectionDisplay = f.section ? `${f.section} · ` : '';
+    const sectionParam = f.section ? `&section=${encodeURIComponent(f.section)}` : '';
+    return `<div class="search-result" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}${sectionParam}'">
       <div class="search-result-icon">${SUBJECT_ICONS[f.subject] || '📖'}</div>
       <div>
         <div class="search-result-name">${f.name}</div>
         <div class="search-result-eq">${f.equation}</div>
-        <div class="search-result-path">${f.subject} · ${section}${f.chapter}</div>
+        <div class="search-result-path">${f.subject} · ${sectionDisplay}${f.chapter}</div>
       </div>
     </div>`;
   }).join('');
