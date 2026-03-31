@@ -83,7 +83,16 @@ const SUBJECTS = {
   }
 };
 
+// Memoize the flattened formula list for performance
+let _cachedFormulas = null;
+
+/**
+ * Flattens the nested SUBJECTS data into a single array of formulas.
+ * Memoized to improve performance during frequent lookups (search, related formulas).
+ */
 function getAllFormulas() {
+  if (_cachedFormulas) return _cachedFormulas;
+
   const results = [];
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
@@ -102,6 +111,7 @@ function getAllFormulas() {
       }
     }
   }
+  _cachedFormulas = results;
   return results;
 }
 
