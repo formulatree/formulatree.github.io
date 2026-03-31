@@ -1,0 +1,3 @@
+## 2026-03-31 - Memoize formula flattening
+**Learning:** In applications that rely on nested static data structures (like `SUBJECTS` in FormulaTree), flattening those structures in a frequently-called utility function (like `getAllFormulas`) can become a performance bottleneck as the data grows. This is especially true when lookups are performed during user interactions like searching or rendering related links.
+**Action:** Always check if core data retrieval functions are performing redundant computations on static data. Memoize the results of expensive operations like object flattening or array transformation to make frequent lookups nearly instantaneous.
