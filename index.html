@@ -88,9 +88,9 @@
   <div class="search-modal">
     <div class="search-input-row">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input class="search-input" id="searchInput" placeholder="Search formulas, equations, topics..." autocomplete="off">
+      <input type="search" class="search-input" id="searchInput" placeholder="Search formulas, equations, topics..." autocomplete="off" aria-label="Search formulas">
     </div>
-    <div class="search-results" id="searchResults">
+    <div class="search-results" id="searchResults" role="listbox">
       <div class="search-empty">Start typing to search 333 formulas…</div>
     </div>
   </div>
@@ -100,17 +100,52 @@
 <script>
 const SUBJECT_ICONS = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
 const SUBJECT_PAGES = { Physics: 'physics.html', Mathematics: 'mathematics.html', Chemistry: 'chemistry.html' };
+let selectedIndex = -1;
 
 function openSearch() {
   document.getElementById('searchOverlay').classList.add('open');
   document.getElementById('searchInput').focus();
+  selectedIndex = -1;
 }
 
 function closeSearch() {
   document.getElementById('searchOverlay').classList.remove('open');
   document.getElementById('searchInput').value = '';
+  selectedIndex = -1;
   document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing to search 333 formulas…</div>';
 }
+
+
+function updateSearchSelection() {
+  const results = document.querySelectorAll('.search-result');
+  results.forEach((res, i) => {
+    if (i === selectedIndex) {
+      res.classList.add('selected');
+      res.setAttribute('aria-selected', 'true');
+      res.scrollIntoView({ block: 'nearest' });
+    } else {
+      res.classList.remove('selected');
+      res.setAttribute('aria-selected', 'false');
+    }
+  });
+}
+
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  const results = document.querySelectorAll('.search-result');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    selectedIndex = (selectedIndex + 1) % results.length;
+    updateSearchSelection();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    selectedIndex = (selectedIndex - 1 + results.length) % results.length;
+    updateSearchSelection();
+  } else if (e.key === 'Enter') {
+    if (selectedIndex >= 0 && results[selectedIndex]) {
+      results[selectedIndex].click();
+    }
+  }
+});
 
 function closeSearchOutside(e) {
   if (e.target === document.getElementById('searchOverlay')) closeSearch();
@@ -124,6 +159,7 @@ document.addEventListener('keydown', e => {
 document.getElementById('searchInput').addEventListener('input', function() {
   const q = this.value.toLowerCase().trim();
   const results = document.getElementById('searchResults');
+  selectedIndex = -1;
   if (!q) {
     results.innerHTML = '<div class="search-empty">Start typing to search 333 formulas…</div>';
     return;
@@ -145,7 +181,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
     const page = SUBJECT_PAGES[f.subject] || 'index.html';
     const sectionDisplay = f.section ? `${f.section} · ` : '';
     const sectionParam = f.section ? `&section=${encodeURIComponent(f.section)}` : '';
-    return `<div class="search-result" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}${sectionParam}'">
+    return `<div class="search-result" role="option" aria-selected="false" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}${sectionParam}'">
       <div class="search-result-icon">${SUBJECT_ICONS[f.subject] || '📖'}</div>
       <div>
         <div class="search-result-name">${f.name}</div>

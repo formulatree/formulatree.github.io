@@ -128,6 +128,20 @@ body {
 
 .search-btn:hover { border-color: var(--border2); color: var(--text2); }
 
+.search-btn:focus-visible,
+.nav-link:focus-visible,
+.subject-card:focus-visible,
+.section-tab:focus-visible,
+.chapter-card:focus-visible,
+.back-btn:focus-visible,
+.formula-header:focus-visible,
+.pill:focus-visible,
+.search-input:focus-visible,
+.pill-popup-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .search-btn kbd {
   background: var(--bg3);
   border: 1px solid var(--border);
@@ -664,7 +678,12 @@ body {
   gap: 14px;
 }
 
-.search-result:hover { background: var(--surface2); }
+.search-result:hover,
+.search-result.selected {
+  background: var(--surface2);
+  border-left: 3px solid var(--accent);
+  padding-left: 15px;
+}
 
 .search-result-icon {
   font-size: 18px;

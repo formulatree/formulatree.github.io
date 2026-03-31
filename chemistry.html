@@ -51,16 +51,16 @@
   <div class="search-modal">
     <div class="search-input-row">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input class="search-input" id="searchInput" placeholder="Search chemistry formulas…" autocomplete="off">
+      <input type="search" class="search-input" id="searchInput" placeholder="Search chemistry formulas…" autocomplete="off" aria-label="Search chemistry formulas">
     </div>
-    <div class="search-results" id="searchResults"><div class="search-empty">Start typing to search…</div></div>
+    <div class="search-results" id="searchResults" role="listbox"><div class="search-empty">Start typing to search…</div></div>
   </div>
 </div>
 <div class="pill-popup-overlay" id="pillPopupOverlay" onclick="closePillPopup()"></div>
 <div class="pill-popup" id="pillPopup" style="display:none">
   <div class="pill-popup-title">
     <span id="pillPopupTitle"></span>
-    <button class="pill-popup-close" onclick="closePillPopup()">&#x2715;</button>
+    <button class="pill-popup-close" onclick="closePillPopup()" aria-label="Close definition">&#x2715;</button>
   </div>
   <div class="pill-popup-body" id="pillPopupBody"></div>
 </div>
@@ -69,6 +69,7 @@ const SECTION_COLORS = { Physical: '#60a5fa', Inorganic: '#a78bfa', Organic: '#3
 const SUBJECT_PAGES = { Physics: 'physics.html', Mathematics: 'mathematics.html', Chemistry: 'chemistry.html' };
 let currentSection = 'Physical';
 let currentChapter = null;
+let selectedIndex = -1;
 
 const params = new URLSearchParams(location.search);
 const initChapter = params.get('chapter');
@@ -187,8 +188,10 @@ function navigateToFormula(id, chapter, subject, section) {
   }
 }
 
-function openSearch() { document.getElementById('searchOverlay').classList.add('open'); document.getElementById('searchInput').focus(); }
-function closeSearch() { document.getElementById('searchOverlay').classList.remove('open'); document.getElementById('searchInput').value = ''; document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing…</div>'; }
+function openSearch() { document.getElementById('searchOverlay').classList.add('open'); document.getElementById('searchInput').focus();
+  selectedIndex = -1; }
+function closeSearch() { document.getElementById('searchOverlay').classList.remove('open'); document.getElementById('searchInput').value = '';
+  selectedIndex = -1; document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing…</div>'; }
 function closeSearchOutside(e) { if (e.target === document.getElementById('searchOverlay')) closeSearch(); }
 
 document.addEventListener('keydown', e => {
@@ -199,15 +202,48 @@ document.addEventListener('keydown', e => {
 document.getElementById('searchInput').addEventListener('input', function() {
   const q = this.value.toLowerCase().trim();
   const results = document.getElementById('searchResults');
+  selectedIndex = -1;
   if (!q) { results.innerHTML = '<div class="search-empty">Start typing…</div>'; return; }
   const all = getAllFormulas();
   const matches = all.filter(f => f.name.toLowerCase().includes(q) || f.equation.toLowerCase().includes(q) || f.explanation.toLowerCase().includes(q)).slice(0,10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
   const icons = { Physics: '⛛', Mathematics: '∑', Chemistry: '⚗' };
-  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
+  results.innerHTML = matches.map((f, i) => `<div class="search-result" role="option" aria-selected="false" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
     <div class="search-result-icon">${icons[f.subject]||'\uD83D\uDCDA'}</div>
     <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} · ${f.section ? f.section+' · ' : ''}${f.chapter}</div></div>
   </div>`).join('');
+});
+
+
+function updateSearchSelection() {
+  const results = document.querySelectorAll('.search-result');
+  results.forEach((res, i) => {
+    if (i === selectedIndex) {
+      res.classList.add('selected');
+      res.setAttribute('aria-selected', 'true');
+      res.scrollIntoView({ block: 'nearest' });
+    } else {
+      res.classList.remove('selected');
+      res.setAttribute('aria-selected', 'false');
+    }
+  });
+}
+
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  const results = document.querySelectorAll('.search-result');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    selectedIndex = (selectedIndex + 1) % results.length;
+    updateSearchSelection();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    selectedIndex = (selectedIndex - 1 + results.length) % results.length;
+    updateSearchSelection();
+  } else if (e.key === 'Enter') {
+    if (selectedIndex >= 0 && results[selectedIndex]) {
+      results[selectedIndex].click();
+    }
+  }
 });
 
 function handleSearchResult(subject, chapter, id, section) {
