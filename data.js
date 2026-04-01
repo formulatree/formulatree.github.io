@@ -120,3 +120,17 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target.closest('[role="button"]');
+    if (target && target.tagName !== 'BUTTON') {
+      e.preventDefault();
+      const rect = target.getBoundingClientRect();
+      target.dispatchEvent(new MouseEvent('click', {
+        bubbles: true, cancelable: true, view: window,
+        clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2
+      }));
+    }
+  }
+});
