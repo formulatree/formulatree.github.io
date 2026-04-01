@@ -83,7 +83,15 @@ const SUBJECTS = {
   }
 };
 
+let _cachedAllFormulas = null;
+
+/**
+ * Returns a flattened array of all formulas from the static SUBJECTS data.
+ * Memoized to improve performance since SUBJECTS is static and this is called frequently.
+ */
 function getAllFormulas() {
+  if (_cachedAllFormulas) return _cachedAllFormulas;
+
   const results = [];
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
@@ -102,6 +110,7 @@ function getAllFormulas() {
       }
     }
   }
+  _cachedAllFormulas = results;
   return results;
 }
 
