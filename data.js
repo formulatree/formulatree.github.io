@@ -120,3 +120,21 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global Accessibility Helper: Handle Enter/Space for custom buttons and options
+document.addEventListener('keydown', e => {
+  const target = e.target.closest('[role="button"], [role="option"]');
+  if (!target) return;
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    const rect = target.getBoundingClientRect();
+    const mouseEvent = new MouseEvent('click', {
+      view: window,
+      bubbles: true,
+      cancelable: true,
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2
+    });
+    target.dispatchEvent(mouseEvent);
+  }
+});
