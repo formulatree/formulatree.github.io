@@ -83,40 +83,77 @@ const SUBJECTS = {
   }
 };
 
+// Performance optimization: Memoized formula access and indexing
+let _allFormulasCache = null;
+let _formulaIdMap = null;
+let _formulaNameMap = null;
+
 function getAllFormulas() {
+  if (_allFormulasCache) return _allFormulasCache;
+
   const results = [];
+  _formulaIdMap = new Map();
+  _formulaNameMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
+          const formula = { subject: subj, chapter: ch, ...f };
+          results.push(formula);
+          _formulaIdMap.set(f.id, formula);
+
+          const lowerName = f.name.toLowerCase();
+          if (!_formulaNameMap.has(lowerName)) _formulaNameMap.set(lowerName, []);
+          _formulaNameMap.get(lowerName).push(formula);
         }
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
           for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
+            const formula = { subject: subj, section: sec, chapter: ch, ...f };
+            results.push(formula);
+            _formulaIdMap.set(f.id, formula);
+
+            const lowerName = f.name.toLowerCase();
+            if (!_formulaNameMap.has(lowerName)) _formulaNameMap.set(lowerName, []);
+            _formulaNameMap.get(lowerName).push(formula);
           }
         }
       }
     }
   }
+  _allFormulasCache = results;
   return results;
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  if (!_formulaIdMap) getAllFormulas();
+  return _formulaIdMap.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  if (!_formulaNameMap) getAllFormulas();
+
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+  const matches = _formulaNameMap.get(nl);
+
+  if (matches) {
+    // Exact match found in index. Prioritize current subject.
+    const subjectMatch = matches.find(f => f.subject === currentSubject);
+    if (subjectMatch) return subjectMatch;
+    return matches[0];
   }
-  return hit || null;
+
+  // Fallback for partial matches (starts with first 5 chars)
+  if (name.length >= 5) {
+    const all = getAllFormulas();
+    const prefix = nl.substring(0, 5);
+    let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(prefix));
+    return hit || null;
+  }
+
+  return null;
 }
