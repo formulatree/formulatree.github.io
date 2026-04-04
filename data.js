@@ -83,7 +83,9 @@ const SUBJECTS = {
   }
 };
 
+let _cachedAllFormulas = null;
 function getAllFormulas() {
+  if (_cachedAllFormulas) return _cachedAllFormulas;
   const results = [];
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
@@ -102,21 +104,51 @@ function getAllFormulas() {
       }
     }
   }
+  _cachedAllFormulas = results;
   return results;
 }
 
-function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+let _formulaIdMap = null;
+let _formulaNameMap = null;
+
+function _ensureMaps() {
+  if (_formulaIdMap) return;
+  _formulaIdMap = new Map();
+  _formulaNameMap = new Map();
+  for (const f of getAllFormulas()) {
+    _formulaIdMap.set(f.id, f);
+    const key = `${f.subject.toLowerCase()}:${f.name.toLowerCase()}`;
+    if (!_formulaNameMap.has(key)) _formulaNameMap.set(key, f);
+    if (!_formulaNameMap.has(f.name.toLowerCase())) _formulaNameMap.set(f.name.toLowerCase(), f);
+  }
 }
 
+/**
+ * Retrieves a formula by its unique ID.
+ * Uses Map-based O(1) lookup after lazy initialization.
+ */
+function getFormulaById(id) {
+  _ensureMaps();
+  return _formulaIdMap.get(id) || null;
+}
+
+/**
+ * Resolves a related formula name to a formula object.
+ * Optimized with Map-based lookup for exact matches.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureMaps();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+  const subjectKey = `${currentSubject.toLowerCase()}:${nl}`;
+
+  let hit = _formulaNameMap.get(subjectKey);
+  if (!hit) hit = _formulaNameMap.get(nl);
+
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    const all = getAllFormulas();
+    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(prefix));
   }
   return hit || null;
 }
