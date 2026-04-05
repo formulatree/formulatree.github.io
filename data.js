@@ -120,3 +120,14 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Keyboard Interaction Helper for Accessibility
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if (role === 'button' || role === 'option') {
+      e.preventDefault();
+      e.target.click();
+    }
+  }
+});

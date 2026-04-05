@@ -1,0 +1,3 @@
+## 2026-04-05 - Keyboard Accessibility for Dynamic Search Results
+**Learning:** Custom interactive elements (e.g., div-based search results) must be made focusable via `tabindex="0"` and assigned appropriate roles (e.g., `role="option"`) within a valid container role (e.g., `role="listbox"`) to ensure a standard-compliant accessibility hierarchy. For custom elements using these roles, a global keyboard listener can bridge the accessibility gap by mapping `Enter` and `Space` keys to click events.
+**Action:** When adding interactivity to non-semantic elements, always include `tabindex`, semantic ARIA roles, and ensure keyboard activation support (either per-element or via a global helper). Always pair these with `:focus-visible` styles to provide clear visual feedback.
