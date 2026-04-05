@@ -83,38 +83,73 @@ const SUBJECTS = {
   }
 };
 
+let memoizedAllFormulas = null;
+let formulaMap = null;
+let formulaNameMap = null;
+
+/**
+ * Returns all formulas across all subjects and chapters.
+ * Optimized with lazy-initialized memoization and Map-based indexing for O(1) lookups.
+ */
 function getAllFormulas() {
+  if (memoizedAllFormulas) return memoizedAllFormulas;
   const results = [];
+  formulaMap = {};
+  formulaNameMap = {};
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
+          const formula = { subject: subj, chapter: ch, ...f };
+          results.push(formula);
+          if (!formulaMap[f.id]) formulaMap[f.id] = formula;
+          const key = f.name.toLowerCase();
+          if (!formulaNameMap[key]) formulaNameMap[key] = [];
+          formulaNameMap[key].push(formula);
         }
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
           for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
+            const formula = { subject: subj, section: sec, chapter: ch, ...f };
+            results.push(formula);
+            if (!formulaMap[f.id]) formulaMap[f.id] = formula;
+            const key = f.name.toLowerCase();
+            if (!formulaNameMap[key]) formulaNameMap[key] = [];
+            formulaNameMap[key].push(formula);
           }
         }
       }
     }
   }
+  memoizedAllFormulas = results;
   return results;
 }
 
+/**
+ * Finds a formula by its unique ID.
+ * Optimized with O(1) Map lookup after initial data load.
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  if (!formulaMap) getAllFormulas();
+  return formulaMap[id] || null;
 }
 
+/**
+ * Resolves a related formula name to a formula object.
+ * Optimized with a name-based index to avoid redundant full-list scans.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  if (!formulaNameMap) getAllFormulas();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+  const matches = formulaNameMap[nl];
+  let hit = null;
+  if (matches) {
+    hit = matches.find(f => f.subject === currentSubject) || matches[0];
+  }
   if (!hit && name.length >= 5) {
+    const all = getAllFormulas();
     hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
     if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
   }
