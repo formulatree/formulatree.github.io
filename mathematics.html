@@ -43,12 +43,12 @@
   <div class="container">FormulaTree · JEE Formula Revision</div>
 </footer>
 <div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)">
-  <div class="search-modal">
+  <div class="search-modal" role="dialog" aria-modal="true" aria-label="Search formulas">
     <div class="search-input-row">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input class="search-input" id="searchInput" placeholder="Search formulas…" autocomplete="off">
+      <input class="search-input" id="searchInput" placeholder="Search formulas…" autocomplete="off" aria-label="Search formulas">
     </div>
-    <div class="search-results" id="searchResults"><div class="search-empty">Start typing to search…</div></div>
+    <div class="search-results" id="searchResults" role="listbox"><div class="search-empty">Start typing to search…</div></div>
   </div>
 </div>
 <div class="pill-popup-overlay" id="pillPopupOverlay" onclick="closePillPopup()"></div>
@@ -167,7 +167,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
   const matches = all.filter(f => f.name.toLowerCase().includes(q) || f.equation.toLowerCase().includes(q) || f.explanation.toLowerCase().includes(q)).slice(0,10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
   const icons = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
-  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
+  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')" role="option" tabindex="0">
     <div class="search-result-icon">${icons[f.subject]||'📖'}</div>
     <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} · ${f.chapter}</div></div>
   </div>`).join('');
