@@ -83,40 +83,44 @@ const SUBJECTS = {
   }
 };
 
+// Memoized formula list and indexes for performance
+let _allCache = null, _idMap = null, _nameMap = null;
+
 function getAllFormulas() {
-  const results = [];
+  if (_allCache) return _allCache;
+  _allCache = []; _idMap = new Map(); _nameMap = new Map();
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
-    if (sdata.chapters) {
-      for (const [ch, chdata] of Object.entries(sdata.chapters)) {
+    const process = (chapters, sec) => {
+      for (const [ch, chdata] of Object.entries(chapters)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
+          const formula = { subject: subj, chapter: ch, ...(sec ? { section: sec } : {}), ...f };
+          _allCache.push(formula);
+          if (!_idMap.has(f.id)) _idMap.set(f.id, formula);
+          const nl = f.name.toLowerCase();
+          if (!_nameMap.has(subj + ":" + nl)) _nameMap.set(subj + ":" + nl, formula);
+          if (!_nameMap.has(nl)) _nameMap.set(nl, formula);
         }
       }
-    } else if (sdata.sections) {
-      for (const [sec, secdata] of Object.entries(sdata.sections)) {
-        for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
-        }
-      }
-    }
+    };
+    if (sdata.chapters) process(sdata.chapters);
+    else if (sdata.sections) Object.entries(sdata.sections).forEach(([sec, sd]) => process(sd.chapters, sec));
   }
-  return results;
+  return _allCache;
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  getAllFormulas();
+  return _idMap.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  getAllFormulas();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+  let hit = _nameMap.get(currentSubject + ":" + nl) || _nameMap.get(nl);
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const p = nl.substring(0, 5);
+    hit = _allCache.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(p)) ||
+          _allCache.find(f => f.name.toLowerCase().startsWith(p));
   }
   return hit || null;
 }
