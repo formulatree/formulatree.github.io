@@ -83,7 +83,16 @@ const SUBJECTS = {
   }
 };
 
+// Internal cache for performance optimization
+let _formulaCache = null;
+
+/**
+ * Traverses the SUBJECTS tree and returns a flat array of all formulas.
+ * Memoized to avoid redundant O(N) traversals.
+ */
 function getAllFormulas() {
+  if (_formulaCache) return _formulaCache;
+
   const results = [];
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
@@ -102,21 +111,63 @@ function getAllFormulas() {
       }
     }
   }
+  _formulaCache = results;
   return results;
 }
 
-function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+let _idIndex = null;
+let _nameIndex = null;
+
+/**
+ * Lazily builds Map-based indexes for O(1) formula retrieval.
+ */
+function _ensureIndices() {
+  if (_idIndex && _nameIndex) return;
+  _idIndex = new Map();
+  _nameIndex = new Map();
+
+  const all = getAllFormulas();
+  for (const f of all) {
+    _idIndex.set(f.id, f);
+    const nl = f.name.toLowerCase();
+    if (!_nameIndex.has(nl)) _nameIndex.set(nl, []);
+    _nameIndex.get(nl).push(f);
+  }
 }
 
+/**
+ * Returns a formula by its unique ID. Optimized with Map lookup.
+ */
+function getFormulaById(id) {
+  _ensureIndices();
+  return _idIndex.get(id) || null;
+}
+
+/**
+ * Resolves a related formula name to a formula object.
+ * Uses Map-based indexing for exact matches with subject priority.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndices();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+  const matches = _nameIndex.get(nl);
+
+  if (matches) {
+    // Priority 1: Exact match in same subject
+    const subjMatch = matches.find(f => f.subject === currentSubject);
+    if (subjMatch) return subjMatch;
+    // Priority 2: Exact match in any subject
+    return matches[0];
   }
-  return hit || null;
+
+  // Fallback: 5-character prefix search (O(N) but only for missed exact matches)
+  if (name.length >= 5) {
+    const all = getAllFormulas();
+    const prefix = nl.substring(0, 5);
+    let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(prefix));
+    return hit || null;
+  }
+
+  return null;
 }
