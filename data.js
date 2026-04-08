@@ -120,3 +120,14 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global keyboard accessibility helper
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target.closest('[role="button"], [role="option"]');
+    if (target) {
+      e.preventDefault();
+      target.click();
+    }
+  }
+});

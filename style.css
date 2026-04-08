@@ -30,6 +30,11 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { scroll-behavior: smooth; }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 
 body {
   background: var(--bg);
@@ -627,6 +632,11 @@ body {
   to { transform: translateY(0); opacity: 1; }
 }
 
+
+.search-input-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
 .search-input-row {
   display: flex;
   align-items: center;
