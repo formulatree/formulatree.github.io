@@ -1,0 +1,3 @@
+## 2026-04-11 - Global Keyboard Support for Custom Interactive Elements
+**Learning:** This application extensively uses custom <div> elements for interactive components (search results, cards) which are inaccessible to keyboard and screen reader users by default. Implementing ARIA roles and tabindex on these elements, combined with a global keydown listener, provides a consistent and scalable solution for accessibility across the entire static site.
+**Action:** Always check for interactive <div> or <span> elements and ensure they have appropriate ARIA roles, tabindex, and are hooked into the global keyboard activation listener in data.js.
