@@ -1,0 +1,3 @@
+## 2026-04-12 - Data Access Anti-Pattern in data.js
+**Learning:** The `getAllFormulas()` function was reconstructing the entire flattened dataset (333+ formulas) on every call, even though the source `SUBJECTS` object is static. This caused $O(N)$ overhead for every search keystroke and every related-formula lookup, leading to significant GC pressure and UI lag during fast typing.
+**Action:** Use lazy-initialized memoization for static datasets and populate Map-based indexes for $O(1)$ lookups by ID and Name, while carefully preserving original search priorities (e.g., subject-local matches first).
