@@ -127,6 +127,11 @@ body {
 }
 
 .search-btn:hover { border-color: var(--border2); color: var(--text2); }
+.search-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.search-input-row:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .search-btn kbd {
   background: var(--bg3);
