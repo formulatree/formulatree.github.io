@@ -83,7 +83,10 @@ const SUBJECTS = {
   }
 };
 
+let _memoizedAllFormulas = null;
+
 function getAllFormulas() {
+  if (_memoizedAllFormulas) return _memoizedAllFormulas;
   const results = [];
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
@@ -102,21 +105,42 @@ function getAllFormulas() {
       }
     }
   }
+  _memoizedAllFormulas = results;
   return results;
 }
 
+let _formulaIdMap = null;
+let _formulaNameMap = null;
+
+function _ensureMaps() {
+  if (_formulaIdMap) return;
+  _formulaIdMap = new Map();
+  _formulaNameMap = new Map();
+  for (const f of getAllFormulas()) {
+    _formulaIdMap.set(f.id, f);
+    const nl = f.name.toLowerCase();
+    if (!_formulaNameMap.has(nl)) _formulaNameMap.set(nl, f);
+  }
+}
+
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureMaps();
+  return _formulaIdMap.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
   const all = getAllFormulas();
   const nl = name.toLowerCase();
+  _ensureMaps();
+  // Subject priority search (linear, but usually small subset)
   let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+  // Global fallback (O(1))
+  if (!hit) hit = _formulaNameMap.get(nl);
+
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(prefix));
   }
   return hit || null;
 }
