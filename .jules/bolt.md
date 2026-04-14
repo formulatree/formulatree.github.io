@@ -1,0 +1,3 @@
+## 2025-05-14 - Data Access Memoization & Indexing
+**Learning:** The application's search feature and cross-formula navigation heavily rely on repeated full-scans of the 'SUBJECTS' object via 'getAllFormulas()'. Since the data is static, failing to cache this result leads to unnecessary (N)$ overhead on every keystroke in the search modal.
+**Action:** Always check if core data-providing functions are recalculating static results, especially if they are invoked by high-frequency UI events like 'input'. Implement Map-based lookups for ID and Name searches to maintain (1)$ performance as the dataset grows.
