@@ -789,3 +789,20 @@ body {
   .hero { padding: 50px 0 40px; }
   .stats-row { gap: 24px; }
 }
+/* Focus states */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.search-input-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.formula-header:focus-visible,
+.chapter-card:focus-visible,
+.search-result:focus-visible {
+  outline-offset: -2px;
+  border-radius: var(--radius);
+}
