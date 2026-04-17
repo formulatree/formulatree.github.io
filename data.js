@@ -120,3 +120,12 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global keyboard accessibility for custom roles
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') &&
+      (e.target.getAttribute('role') === 'button' || e.target.getAttribute('role') === 'option')) {
+    e.preventDefault();
+    e.target.click();
+  }
+});
