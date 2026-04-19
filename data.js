@@ -83,40 +83,73 @@ const SUBJECTS = {
   }
 };
 
+// Optimized retrieval with memoization and indexing
+let _cachedFormulas = null;
+let _idIndex = null;
+let _nameIndex = null;
+let _subjectNameIndex = null;
+
 function getAllFormulas() {
-  const results = [];
+  if (_cachedFormulas) return _cachedFormulas;
+
+  _cachedFormulas = [];
+  _idIndex = new Map();
+  _nameIndex = new Map();
+  _subjectNameIndex = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    if (!_subjectNameIndex.has(subj)) _subjectNameIndex.set(subj, new Map());
+    const snMap = _subjectNameIndex.get(subj);
+
+    const processChapter = (ch, chdata, sec) => {
+      for (const f of chdata.formulas) {
+        const formula = { subject: subj, ...(sec ? { section: sec } : {}), chapter: ch, ...f };
+        _cachedFormulas.push(formula);
+        if (!_idIndex.has(f.id)) _idIndex.set(f.id, formula);
+        const nl = f.name.toLowerCase();
+        if (!_nameIndex.has(nl)) _nameIndex.set(nl, formula);
+        if (!snMap.has(nl)) snMap.set(nl, formula);
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processChapter(ch, chdata);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processChapter(ch, chdata, sec);
         }
       }
     }
   }
-  return results;
+  return _cachedFormulas;
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  getAllFormulas(); // Ensure indexes are built
+  return _idIndex.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
   const all = getAllFormulas();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Exact match in current subject
+  const snMap = _subjectNameIndex.get(currentSubject);
+  if (snMap && snMap.has(nl)) return snMap.get(nl);
+
+  // 2. Exact match in any subject
+  if (_nameIndex.has(nl)) return _nameIndex.get(nl);
+
+  // 3. Fallback to prefix search (original behavior)
+  if (name.length >= 5) {
+    const prefix = nl.substring(0, 5);
+    let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(prefix));
+    return hit || null;
   }
-  return hit || null;
+
+  return null;
 }
