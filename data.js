@@ -120,3 +120,11 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('keydown', e => {
+  const role = e.target.getAttribute('role');
+  if ((role === 'button' || role === 'option' || role === 'tab') && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    e.target.click();
+  }
+});
