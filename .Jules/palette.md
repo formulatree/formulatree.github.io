@@ -1,0 +1,3 @@
+## 2026-04-21 - Native Button Focus and CRLF Handling
+**Learning:** Native `<button>` elements are focusable by default; adding `tabindex="0"` is redundant and can occasionally interfere with some screen readers' expectations of semantic elements. Also, the repository uses CRLF line endings, which causes standard string replacement tools to fail if they expect LF, necessitating binary-mode processing in Python scripts.
+**Action:** Always prefer native focus behavior for semantic buttons and use binary mode (`rb`/`wb`) when programmatically editing files in this repository to preserve line endings and ensure match success.
