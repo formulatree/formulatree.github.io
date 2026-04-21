@@ -120,3 +120,14 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global Keyboard Navigation Support
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if (role === 'button' || role === 'option' || role === 'tab') {
+      e.preventDefault();
+      e.target.click();
+    }
+  }
+});

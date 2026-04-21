@@ -88,9 +88,9 @@
   <div class="search-modal">
     <div class="search-input-row">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input class="search-input" id="searchInput" placeholder="Search formulas, equations, topics..." autocomplete="off">
+      <input class="search-input" aria-label="Search formulas" id="searchInput" placeholder="Search formulas, equations, topics..." autocomplete="off">
     </div>
-    <div class="search-results" id="searchResults">
+    <div class="search-results" id="searchResults" role="listbox">
       <div class="search-empty">Start typing to search 333 formulas…</div>
     </div>
   </div>
@@ -145,7 +145,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
     const page = SUBJECT_PAGES[f.subject] || 'index.html';
     const sectionDisplay = f.section ? `${f.section} · ` : '';
     const sectionParam = f.section ? `&section=${encodeURIComponent(f.section)}` : '';
-    return `<div class="search-result" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}${sectionParam}'">
+    return `<div class="search-result" tabindex="0" role="option" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}${sectionParam}'">
       <div class="search-result-icon">${SUBJECT_ICONS[f.subject] || '📖'}</div>
       <div>
         <div class="search-result-name">${f.name}</div>
