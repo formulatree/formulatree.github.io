@@ -83,40 +83,64 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// Performance memoization
+let _memoAllFormulas = null;
+let _memoIdMap = null;
+let _memoNameMap = null; // Map<name.toLowerCase(), Formula>
+let _memoSubjNameMap = null; // Map<subject + '|' + name.toLowerCase(), Formula>
+
+function _initMemo() {
+  if (_memoAllFormulas) return;
+  _memoAllFormulas = [];
+  _memoIdMap = new Map();
+  _memoNameMap = new Map();
+  _memoSubjNameMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
-    if (sdata.chapters) {
-      for (const [ch, chdata] of Object.entries(sdata.chapters)) {
+    const processChapters = (chapters, section = null) => {
+      for (const [ch, chdata] of Object.entries(chapters)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
+          const flat = { subject: subj, chapter: ch, ...f };
+          if (section) flat.section = section;
+          _memoAllFormulas.push(flat);
+          if (!_memoIdMap.has(f.id)) _memoIdMap.set(f.id, flat);
+          const nl = f.name.toLowerCase();
+          if (!_memoNameMap.has(nl)) _memoNameMap.set(nl, flat);
+          _memoSubjNameMap.set(subj + '|' + nl, flat);
         }
       }
-    } else if (sdata.sections) {
+    };
+    if (sdata.chapters) processChapters(sdata.chapters);
+    else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
-        for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
-        }
+        processChapters(secdata.chapters, sec);
       }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _initMemo();
+  return _memoAllFormulas;
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _initMemo();
+  return _memoIdMap.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _initMemo();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+  // 1. Try subject priority
+  let hit = _memoSubjNameMap.get(currentSubject + '|' + nl);
+  // 2. Try global name match
+  if (!hit) hit = _memoNameMap.get(nl);
+  // 3. Fallback to prefix search if no exact match
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    hit = _memoAllFormulas.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = _memoAllFormulas.find(f => f.name.toLowerCase().startsWith(prefix));
   }
   return hit || null;
 }
