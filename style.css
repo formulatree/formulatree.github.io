@@ -29,6 +29,11 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 html { scroll-behavior: smooth; }
 
 body {
@@ -633,6 +638,11 @@ body {
   gap: 12px;
   padding: 14px 18px;
   border-bottom: 1px solid var(--border);
+  transition: border-color 0.18s;
+}
+
+.search-input-row:focus-within {
+  border-bottom-color: var(--accent);
 }
 
 .search-input-row svg { color: var(--text3); flex-shrink: 0; }

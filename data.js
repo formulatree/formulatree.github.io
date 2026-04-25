@@ -120,3 +120,14 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global keyboard listener for custom interactive elements
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target.closest('[role="button"], [role="option"], [role="tab"]');
+    if (target) {
+      if (e.key === ' ') e.preventDefault(); // Prevent page scroll on Space
+      target.click();
+    }
+  }
+});
