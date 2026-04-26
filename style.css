@@ -633,6 +633,17 @@ body {
   gap: 12px;
   padding: 14px 18px;
   border-bottom: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.search-input-row:focus-within {
+  border-bottom-color: var(--accent);
+  background: rgba(124,106,247,0.03);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .search-input-row svg { color: var(--text3); flex-shrink: 0; }
