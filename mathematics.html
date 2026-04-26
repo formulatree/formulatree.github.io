@@ -45,10 +45,10 @@
 <div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)">
   <div class="search-modal">
     <div class="search-input-row">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input class="search-input" id="searchInput" placeholder="Search formulas…" autocomplete="off">
+      <svg width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" id="searchInput" placeholder="Search formulas…" aria-label="Search formulas" autocomplete="off">
     </div>
-    <div class="search-results" id="searchResults"><div class="search-empty">Start typing to search…</div></div>
+    <div class="search-results" id="searchResults" role="listbox"><div class="search-empty">Start typing to search…</div></div>
   </div>
 </div>
 <div class="pill-popup-overlay" id="pillPopupOverlay" onclick="closePillPopup()"></div>
@@ -80,13 +80,13 @@ function updateBreadcrumb(chapter) {
 function renderFormulaCard(f, i) {
   const relatedHtml = (f.related || []).map(r => {
     const target = resolveGlobalRelated(r, 'Mathematics');
-    if (target) return `<span class="pill linked" onclick="navigateToFormula('${target.id}','${esc(target.chapter)}','${target.subject}','${target.section||''}')">&#8599; ${r}</span>`;
-    if (typeof POPUP_DEFS !== 'undefined' && POPUP_DEFS[r]) return `<span class="pill info-pill" data-pill="${r.replace(/"/g,'&quot;')}" title="Show definition">&#x2139; ${r}</span>`;
+    if (target) return `<span class="pill linked" role="button" tabindex="0" onclick="navigateToFormula('${target.id}','${esc(target.chapter)}','${target.subject}','${target.section||''}')">&#8599; ${r}</span>`;
+    if (typeof POPUP_DEFS !== 'undefined' && POPUP_DEFS[r]) return `<span class="pill info-pill" role="button" tabindex="0" data-pill="${r.replace(/"/g,'&quot;')}" title="Show definition">&#x2139; ${r}</span>`;
     return `<span class="pill">${r}</span>`;
   }).join('');
   const jeeHtml = (f.jee || []).map(j => `<span class="jee-pill">${j}</span>`).join('');
   return `<div class="formula-card fade-up" id="fc-${f.id}">
-    <div class="formula-header" onclick="toggleCard('${f.id}')">
+    <div class="formula-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleCard('${f.id}')">
       <span class="formula-num">${String(i+1).padStart(2,'0')}</span>
       <span class="formula-name">${f.name}</span>
       <span class="formula-eq-preview" style="color:${SUBJECT_COLOR};background:rgba(251,191,36,0.08)">${f.equation}</span>
@@ -106,7 +106,7 @@ function renderChapters() {
   const chapters = SUBJECTS[SUBJECT_KEY].chapters;
   document.getElementById('mainView').innerHTML = `<div class="chapters-grid">
     ${Object.entries(chapters).map(([name, data]) => `
-      <div class="chapter-card fade-up" style="--chapter-color:${SUBJECT_COLOR}" onclick="openChapter('${esc(name)}')">
+      <div class="chapter-card fade-up" role="button" tabindex="0" style="--chapter-color:${SUBJECT_COLOR}" onclick="openChapter('${esc(name)}')">
         <span class="chapter-name">${name}</span>
         <span class="chapter-count">${data.formulas.length}</span>
       </div>`).join('')}
@@ -130,15 +130,15 @@ function toggleCard(id) {
   const card = document.getElementById('fc-' + id);
   if (!card) return;
   const isOpen = card.classList.contains('open');
-  document.querySelectorAll('.formula-card.open').forEach(c => c.classList.remove('open'));
-  if (!isOpen) card.classList.add('open');
+  document.querySelectorAll('.formula-card.open').forEach(c => { c.classList.remove('open'); c.querySelector('.formula-header').setAttribute('aria-expanded', 'false'); });
+  if (!isOpen) { card.classList.add('open'); card.querySelector('.formula-header').setAttribute('aria-expanded', 'true'); }
 }
 
 function openAndScroll(id) {
   setTimeout(() => {
     const card = document.getElementById('fc-' + id);
     if (card) {
-      document.querySelectorAll('.formula-card.open').forEach(c => c.classList.remove('open'));
+      document.querySelectorAll('.formula-card.open').forEach(c => { c.classList.remove('open'); c.querySelector('.formula-header').setAttribute('aria-expanded', 'false'); });
       card.classList.add('open');
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -167,7 +167,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
   const matches = all.filter(f => f.name.toLowerCase().includes(q) || f.equation.toLowerCase().includes(q) || f.explanation.toLowerCase().includes(q)).slice(0,10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
   const icons = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
-  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
+  results.innerHTML = matches.map(f => `<div class="search-result" role="option" tabindex="0" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
     <div class="search-result-icon">${icons[f.subject]||'📖'}</div>
     <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} · ${f.chapter}</div></div>
   </div>`).join('');

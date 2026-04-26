@@ -120,3 +120,15 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global accessibility: allow Enter and Space to trigger clicks on custom interactive elements
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+  const role = e.target.getAttribute('role');
+  if (role === 'button' || role === 'option' || role === 'tab') {
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === ' ') e.preventDefault(); // Prevent scrolling for Space
+      e.target.click();
+    }
+  }
+});
