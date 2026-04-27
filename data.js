@@ -83,40 +83,74 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+let _allFormulas = null;
+let _idMap = null;
+let _nameMap = null;
+let _subjectNameMap = null;
+
+function _ensureIndexes() {
+  if (_allFormulas) return;
+  _allFormulas = [];
+  _idMap = new Map();
+  _nameMap = new Map();
+  _subjectNameMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    const processFormulas = (ch, formulas, sec = null) => {
+      for (const f of formulas) {
+        const formula = { subject: subj, chapter: ch, ...f };
+        if (sec) formula.section = sec;
+        _allFormulas.push(formula);
+        if (!_idMap.has(f.id)) _idMap.set(f.id, formula);
+
+        const nl = f.name.toLowerCase();
+        if (!_nameMap.has(nl)) _nameMap.set(nl, formula);
+
+        if (!_subjectNameMap.has(subj)) _subjectNameMap.set(subj, new Map());
+        const snMap = _subjectNameMap.get(subj);
+        if (!snMap.has(nl)) snMap.set(nl, formula);
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processFormulas(ch, chdata.formulas);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processFormulas(ch, chdata.formulas, sec);
         }
       }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  return [..._allFormulas];
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+
+  // 1. Check subject-specific exact match
+  const snMap = _subjectNameMap.get(currentSubject);
+  let hit = snMap ? snMap.get(nl) : null;
+
+  // 2. Check global exact match
+  if (!hit) hit = _nameMap.get(nl);
+
+  // 3. Fallback to prefix search (O(N) but rare)
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    hit = _allFormulas.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    if (!hit) hit = _allFormulas.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
   }
   return hit || null;
 }
