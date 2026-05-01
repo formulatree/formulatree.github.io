@@ -120,3 +120,13 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if (['button', 'tab', 'option'].includes(role) && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A') {
+      e.preventDefault();
+      e.target.click();
+    }
+  }
+});
