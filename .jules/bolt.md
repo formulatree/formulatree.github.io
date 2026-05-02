@@ -1,0 +1,3 @@
+## 2025-05-15 - Duplicate Data IDs and First-Occurrence Priority
+**Learning:** The codebase contains duplicate formula IDs across different subjects (e.g., 'gen1' to 'gen9' in Physics and Mathematics, 'hyd1' to 'hyd9' in Physics and Chemistry). The original linear search logic implicitly prioritized the first occurrence found during traversal (Physics > Mathematics > Chemistry). When implementing Map-based indexing, a simple `map.set(id, formula)` would result in the last occurrence overwriting earlier ones, breaking the original retrieval priority.
+**Action:** Always use `if (!map.has(key)) map.set(key, value)` when building indexes for this repository to ensure 'first occurrence wins' logic, maintaining functional parity with the original traversal-based retrieval.

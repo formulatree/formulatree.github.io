@@ -83,40 +83,90 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// Internal cache and indexes for performance
+let _memoAllFormulas = null;
+let _idMap = null;
+let _nameGlobalMap = null;
+let _nameSubjectMap = null;
+
+/**
+ * Builds indexes for O(1) lookups and memoizes the formula collection.
+ * This significantly improves performance for search and related formula resolution.
+ */
+function _ensureIndexes() {
+  if (_memoAllFormulas) return;
+
+  const all = [];
+  _idMap = new Map();
+  _nameGlobalMap = new Map();
+  _nameSubjectMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
-    if (sdata.chapters) {
-      for (const [ch, chdata] of Object.entries(sdata.chapters)) {
+    const subjectMap = new Map();
+    _nameSubjectMap.set(subj, subjectMap);
+
+    const processChapters = (chapters, section = null) => {
+      for (const [ch, chdata] of Object.entries(chapters)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
+          const formula = {
+            subject: subj,
+            chapter: ch,
+            ...(section ? { section } : {}),
+            ...f
+          };
+          all.push(formula);
+
+          // First occurrence wins for duplicate IDs/names
+          if (!_idMap.has(f.id)) _idMap.set(f.id, formula);
+
+          const nameLower = f.name.toLowerCase();
+          if (!subjectMap.has(nameLower)) subjectMap.set(nameLower, formula);
+          if (!_nameGlobalMap.has(nameLower)) _nameGlobalMap.set(nameLower, formula);
         }
       }
+    };
+
+    if (sdata.chapters) {
+      processChapters(sdata.chapters);
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
-        for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
-        }
+        processChapters(secdata.chapters, sec);
       }
     }
   }
-  return results;
+  _memoAllFormulas = all;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  // Return shallow copies to prevent accidental mutation of the cache
+  return _memoAllFormulas.map(f => ({ ...f }));
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  const f = _idMap.get(id);
+  return f ? { ...f } : null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+
+  // 1. Priority 1: Exact match within current subject
+  const subjectMap = _nameSubjectMap.get(currentSubject);
+  let hit = subjectMap ? subjectMap.get(nl) : null;
+
+  // 2. Priority 2: Global exact match
+  if (!hit) hit = _nameGlobalMap.get(nl);
+
+  // 3. Priority 3: Prefix fallback (minimum 5 chars)
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    // Prefix search is less frequent, so we search the memoized array
+    hit = _memoAllFormulas.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = _memoAllFormulas.find(f => f.name.toLowerCase().startsWith(prefix));
   }
-  return hit || null;
+
+  return hit ? { ...hit } : null;
 }
