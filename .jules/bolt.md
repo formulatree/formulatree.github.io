@@ -1,0 +1,3 @@
+## 2026-05-03 - Data Indexing and Memoization in data.js
+**Learning:** The previous implementation of data retrieval functions like \`getAllFormulas\`, \`getFormulaById\`, and \`resolveGlobalRelated\` performed a full tree traversal or linear search on every call. In a search-heavy application where these functions are triggered on every keystroke, this led to significant cumulative overhead. Implementing lazy-initialized memoization and Map-based indexing provides near-instant lookups (O(1)) and avoids redundant computations.
+**Action:** Always prefer Map-based indexing for collections that are frequently queried by unique attributes (ID, name) and memoize expensive object traversals.
