@@ -120,3 +120,13 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Handle Enter/Space for custom interactive elements
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    if (e.target.getAttribute('role') === 'option') {
+      e.preventDefault();
+      e.target.click();
+    }
+  }
+});

@@ -789,3 +789,11 @@ body {
   .hero { padding: 50px 0 40px; }
   .stats-row { gap: 24px; }
 }
+/* ── Accessibility ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.search-input-row:focus-within {
+  border-color: var(--accent);
+}
