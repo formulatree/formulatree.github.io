@@ -83,40 +83,93 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+let _allFormulasCache = null;
+let _formulaByIdMap = null;
+let _formulaByNameMap = null;
+let _formulaBySubjectNameMap = {};
+
+/**
+ * Ensures that the formula collection and Map-based indexes are initialized.
+ * Optimized to traverse the SUBJECTS tree only once.
+ */
+function _ensureIndexes() {
+  if (_allFormulasCache) return;
+  _allFormulasCache = [];
+  _formulaByIdMap = new Map();
+  _formulaByNameMap = new Map();
+  _formulaBySubjectNameMap = {};
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
-    if (sdata.chapters) {
-      for (const [ch, chdata] of Object.entries(sdata.chapters)) {
+    _formulaBySubjectNameMap[subj] = new Map();
+
+    const processChapters = (chaps, sectionName = null) => {
+      for (const [ch, chdata] of Object.entries(chaps)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
-      }
-    } else if (sdata.sections) {
-      for (const [sec, secdata] of Object.entries(sdata.sections)) {
-        for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
+          const formula = { subject: subj, chapter: ch, ...f };
+          if (sectionName) formula.section = sectionName;
+          _allFormulasCache.push(formula);
+
+          // First occurrence wins for duplicate IDs/names
+          if (!_formulaByIdMap.has(f.id)) _formulaByIdMap.set(f.id, formula);
+
+          const nameLower = f.name.toLowerCase();
+          if (!_formulaByNameMap.has(nameLower)) _formulaByNameMap.set(nameLower, formula);
+          if (!_formulaBySubjectNameMap[subj].has(nameLower)) {
+            _formulaBySubjectNameMap[subj].set(nameLower, formula);
           }
         }
       }
+    };
+
+    if (sdata.chapters) {
+      processChapters(sdata.chapters);
+    } else if (sdata.sections) {
+      for (const [sec, secdata] of Object.entries(sdata.sections)) {
+        processChapters(secdata.chapters, sec);
+      }
     }
   }
-  return results;
 }
 
+/**
+ * Returns all formulas across all subjects.
+ * Memoized to avoid repeated tree traversal.
+ */
+function getAllFormulas() {
+  _ensureIndexes();
+  // Return shallow copies to prevent accidental mutation of the cache
+  return _allFormulasCache.map(f => ({ ...f }));
+}
+
+/**
+ * Fast O(1) lookup of a formula by its ID.
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  const f = _formulaByIdMap.get(id);
+  return f ? { ...f } : null;
 }
 
+/**
+ * Resolves a related formula by name with subject priority.
+ * Uses O(1) Map lookups for exact matches.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+
+  // 1. Exact match in current subject (O(1))
+  let hit = _formulaBySubjectNameMap[currentSubject]?.get(nl);
+
+  // 2. Exact match globally (O(1))
+  if (!hit) hit = _formulaByNameMap.get(nl);
+
+  // 3. Prefix match fallback (O(N)) - kept for functional parity
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    hit = _allFormulasCache.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = _allFormulasCache.find(f => f.name.toLowerCase().startsWith(prefix));
   }
-  return hit || null;
+
+  return hit ? { ...hit } : null;
 }
