@@ -120,3 +120,18 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Accessibility: Global keydown listener for custom interactive elements
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target;
+    const role = target.getAttribute('role');
+    if (role === 'button' || role === 'tab' || role === 'option') {
+      // Don't interfere with native buttons/links
+      if (target.tagName !== 'BUTTON' && target.tagName !== 'A') {
+        e.preventDefault();
+        target.click();
+      }
+    }
+  }
+});
