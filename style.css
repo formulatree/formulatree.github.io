@@ -40,6 +40,12 @@ body {
   min-height: 100vh;
 }
 
+/* Accessibility: Focus Indicators */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ── Header ── */
 .header {
   position: sticky;
@@ -633,6 +639,12 @@ body {
   gap: 12px;
   padding: 14px 18px;
   border-bottom: 1px solid var(--border);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .search-input-row svg { color: var(--text3); flex-shrink: 0; }

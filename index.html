@@ -145,7 +145,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
     const page = SUBJECT_PAGES[f.subject] || 'index.html';
     const sectionDisplay = f.section ? `${f.section} · ` : '';
     const sectionParam = f.section ? `&section=${encodeURIComponent(f.section)}` : '';
-    return `<div class="search-result" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}${sectionParam}'">
+    return `<div class="search-result" role="option" tabindex="0" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}${sectionParam}'">
       <div class="search-result-icon">${SUBJECT_ICONS[f.subject] || '📖'}</div>
       <div>
         <div class="search-result-name">${f.name}</div>
