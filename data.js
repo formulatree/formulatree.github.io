@@ -83,40 +83,69 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+let _memoAllFormulas = null;
+let _formulaIdMap = null;
+let _globalNameMap = null;
+let _subjectPriorityNameMap = null;
+
+/**
+ * Lazily initializes Maps and memoized array for high-performance formula retrieval.
+ * Preserves "first occurrence wins" logic for duplicate IDs and names.
+ */
+function _ensureIndexes() {
+  if (_memoAllFormulas) return;
+  _memoAllFormulas = [];
+  _formulaIdMap = new Map();
+  _globalNameMap = new Map();
+  _subjectPriorityNameMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
-    if (sdata.chapters) {
-      for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+    const process = (ch, chdata, sec) => {
+      for (const f of chdata.formulas) {
+        const entry = { subject: subj, chapter: ch, ...f };
+        if (sec) entry.section = sec;
+        _memoAllFormulas.push(entry);
+        if (!_formulaIdMap.has(f.id)) _formulaIdMap.set(f.id, entry);
+        const nl = f.name.toLowerCase();
+        if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, entry);
+        const pk = `${subj}|${nl}`;
+        if (!_subjectPriorityNameMap.has(pk)) _subjectPriorityNameMap.set(pk, entry);
       }
+    };
+    if (sdata.chapters) {
+      for (const [ch, d] of Object.entries(sdata.chapters)) process(ch, d);
     } else if (sdata.sections) {
-      for (const [sec, secdata] of Object.entries(sdata.sections)) {
-        for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
-        }
+      for (const [sec, sd] of Object.entries(sdata.sections)) {
+        for (const [ch, d] of Object.entries(sd.chapters)) process(ch, d, sec);
       }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  // Returns shallow copies of both the array and items to preserve cache integrity
+  return _memoAllFormulas.map(f => ({ ...f }));
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  const f = _formulaIdMap.get(id);
+  return f ? { ...f } : null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+  // 1. Exact match in current subject (O(1))
+  let hit = _subjectPriorityNameMap.get(`${currentSubject}|${nl}`);
+  // 2. Global exact match (O(1))
+  if (!hit) hit = _globalNameMap.get(nl);
+  // 3. Prefix fallback (O(N) but rare)
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const p = nl.substring(0, 5);
+    hit = _memoAllFormulas.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(p)) ||
+          _memoAllFormulas.find(f => f.name.toLowerCase().startsWith(p));
   }
-  return hit || null;
+  return hit ? { ...hit } : null;
 }
