@@ -120,3 +120,18 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global keydown listener for keyboard accessibility
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target;
+    const role = target.getAttribute('role');
+    if (role === 'button' || role === 'tab' || role === 'option') {
+      // Avoid double trigger for native elements
+      if (target.tagName !== 'BUTTON' && target.tagName !== 'A') {
+        e.preventDefault();
+        target.click();
+      }
+    }
+  }
+});
