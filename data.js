@@ -1,6 +1,11 @@
 // FormulaTree — JEE Formula Revision
 // 333 formulas across 37 chapters
 
+let memoizedAllFormulas = null;
+let formulaIdMap = null;
+let globalNameMap = null;
+let subjectPriorityNameMap = null;
+
 const SUBJECTS = {
   Physics: {
     color: "#34d399",
@@ -83,40 +88,80 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+function _ensureIndexes() {
+  if (memoizedAllFormulas) return;
+  memoizedAllFormulas = [];
+  formulaIdMap = new Map();
+  globalNameMap = new Map();
+  subjectPriorityNameMap = new Map(); // Map<subject, Map<name, formula>>
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    if (!subjectPriorityNameMap.has(subj)) {
+      subjectPriorityNameMap.set(subj, new Map());
+    }
+    const subjMap = subjectPriorityNameMap.get(subj);
+
+    const processChapter = (ch, chdata, sec = null) => {
+      for (const f of chdata.formulas) {
+        const fullFormula = { subject: subj, chapter: ch, ...(sec ? { section: sec } : {}), ...f };
+        memoizedAllFormulas.push(fullFormula);
+
+        if (!formulaIdMap.has(f.id)) {
+          formulaIdMap.set(f.id, fullFormula);
+        }
+
+        const nameLower = f.name.toLowerCase();
+        if (!globalNameMap.has(nameLower)) {
+          globalNameMap.set(nameLower, fullFormula);
+        }
+        if (!subjMap.has(nameLower)) {
+          subjMap.set(nameLower, fullFormula);
+        }
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processChapter(ch, chdata);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processChapter(ch, chdata, sec);
         }
       }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  return memoizedAllFormulas.map(f => ({ ...f }));
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  const f = formulaIdMap.get(id);
+  return f ? { ...f } : null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+
+  // 1. Try priority subject exact match
+  const subjMap = subjectPriorityNameMap.get(currentSubject);
+  let hit = subjMap ? subjMap.get(nl) : null;
+
+  // 2. Try global exact match
+  if (!hit) hit = globalNameMap.get(nl);
+
+  // 3. Fallback to prefix search if name is long enough
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    hit = memoizedAllFormulas.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = memoizedAllFormulas.find(f => f.name.toLowerCase().startsWith(prefix));
   }
-  return hit || null;
+
+  return hit ? { ...hit } : null;
 }
