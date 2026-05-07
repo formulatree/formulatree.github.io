@@ -120,3 +120,14 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global Keyboard Interaction Handler
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target.closest('[role="button"], [role="option"], [role="tab"]');
+    if (target && !['A', 'BUTTON', 'INPUT', 'TEXTAREA'].includes(target.tagName)) {
+      e.preventDefault();
+      target.click();
+    }
+  }
+});
