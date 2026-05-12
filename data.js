@@ -120,3 +120,14 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global keyboard accessibility for custom interactive elements
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target.closest('[role="button"], [role="tab"], [role="option"]');
+    if (target && !['BUTTON', 'A'].includes(target.tagName)) {
+      e.preventDefault();
+      target.click();
+    }
+  }
+});
