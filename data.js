@@ -83,40 +83,111 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+let _allFormulas = null;
+let _formulaIdMap = null;
+let _globalNameMap = null;
+let _subjectPriorityNameMap = null;
+
+/**
+ * Lazily initializes and caches formula indexes for high-performance lookups.
+ * Optimized for O(1) retrieval by ID and Name.
+ */
+function _ensureIndexes() {
+  if (_allFormulas) return;
+
+  _allFormulas = [];
+  _formulaIdMap = new Map();
+  _globalNameMap = new Map();
+  _subjectPriorityNameMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    const processChapter = (ch, chdata, sec = null) => {
+      for (const f of chdata.formulas) {
+        const formula = sec
+          ? { subject: subj, section: sec, chapter: ch, ...f }
+          : { subject: subj, chapter: ch, ...f };
+
+        _allFormulas.push(formula);
+
+        // First occurrence wins for Map consistency with original .find() logic
+        if (!_formulaIdMap.has(formula.id)) {
+          _formulaIdMap.set(formula.id, formula);
+        }
+
+        const lowerName = formula.name.toLowerCase();
+        if (!_globalNameMap.has(lowerName)) {
+          _globalNameMap.set(lowerName, formula);
+        }
+
+        const priorityKey = `${subj}|${lowerName}`;
+        if (!_subjectPriorityNameMap.has(priorityKey)) {
+          _subjectPriorityNameMap.set(priorityKey, formula);
+        }
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processChapter(ch, chdata);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processChapter(ch, chdata, sec);
         }
       }
     }
   }
-  return results;
 }
 
+/**
+ * Returns a flattened array of all 333 formulas.
+ * Optimized with lazy-initialized memoization.
+ */
+function getAllFormulas() {
+  _ensureIndexes();
+  // Return a shallow copy to prevent external mutations of the cache
+  return [..._allFormulas];
+}
+
+/**
+ * Retrieves a formula by its unique ID.
+ * Optimized with O(1) Map lookup.
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _formulaIdMap.get(id) || null;
 }
 
+/**
+ * Resolves a formula reference by name, prioritizing the current subject.
+ * Optimized with Map lookups and fallback prefix searching.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Priority exact match in current subject
+  const priorityKey = `${currentSubject}|${nl}`;
+  const priorityHit = _subjectPriorityNameMap.get(priorityKey);
+  if (priorityHit) return priorityHit;
+
+  // 2. Global exact match
+  const globalHit = _globalNameMap.get(nl);
+  if (globalHit) return globalHit;
+
+  // 3. Fallback to prefix search for partial matches (min 5 chars)
+  if (name.length >= 5) {
+    const prefix = nl.substring(0, 5);
+    // Prefix search still requires linear scan but is only a fallback
+    let prefixHit = _allFormulas.find(f =>
+      f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix)
+    );
+    if (!prefixHit) {
+      prefixHit = _allFormulas.find(f => f.name.toLowerCase().startsWith(prefix));
+    }
+    return prefixHit || null;
   }
-  return hit || null;
+
+  return null;
 }
