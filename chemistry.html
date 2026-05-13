@@ -47,11 +47,11 @@
 <footer class="footer">
   <div class="container">FormulaTree · JEE Formula Revision</div>
 </footer>
-<div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)">
+<div class="search-overlay" id="searchOverlay" role="dialog" aria-modal="true" aria-hidden="true" onclick="closeSearchOutside(event)">
   <div class="search-modal">
     <div class="search-input-row">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input class="search-input" id="searchInput" placeholder="Search chemistry formulas…" autocomplete="off">
+      <input class="search-input" aria-label="Search chemistry formulas" id="searchInput" placeholder="Search chemistry formulas…" autocomplete="off">
     </div>
     <div class="search-results" id="searchResults"><div class="search-empty">Start typing to search…</div></div>
   </div>
@@ -60,7 +60,7 @@
 <div class="pill-popup" id="pillPopup" style="display:none">
   <div class="pill-popup-title">
     <span id="pillPopupTitle"></span>
-    <button class="pill-popup-close" onclick="closePillPopup()">&#x2715;</button>
+    <button class="pill-popup-close" aria-label="Close" onclick="closePillPopup()">&#x2715;</button>
   </div>
   <div class="pill-popup-body" id="pillPopupBody"></div>
 </div>
@@ -187,8 +187,8 @@ function navigateToFormula(id, chapter, subject, section) {
   }
 }
 
-function openSearch() { document.getElementById('searchOverlay').classList.add('open'); document.getElementById('searchInput').focus(); }
-function closeSearch() { document.getElementById('searchOverlay').classList.remove('open'); document.getElementById('searchInput').value = ''; document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing…</div>'; }
+function openSearch() { document.getElementById('searchOverlay').classList.add('open'); document.getElementById('searchOverlay').setAttribute('aria-hidden', 'false'); document.getElementById('searchInput').focus(); }
+function closeSearch() { document.getElementById('searchOverlay').classList.remove('open'); document.getElementById('searchOverlay').setAttribute('aria-hidden', 'true'); document.getElementById('searchInput').value = ''; document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing…</div>'; }
 function closeSearchOutside(e) { if (e.target === document.getElementById('searchOverlay')) closeSearch(); }
 
 document.addEventListener('keydown', e => {
