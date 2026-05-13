@@ -789,3 +789,19 @@ body {
   .hero { padding: 50px 0 40px; }
   .stats-row { gap: 24px; }
 }
+/* Focus Indicators */
+.nav-link:focus-visible, .search-btn:focus-visible, .back-btn:focus-visible, .pill:focus-visible, .pill-popup-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.subject-card:focus-visible, .chapter-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.formula-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--radius);
+}
+.search-input:focus { outline: none; }
+.search-input-row:focus-within { border-bottom-color: var(--accent); }
