@@ -83,40 +83,110 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+let _allFormulas = null;
+let _formulaIdMap = null;
+let _globalNameMap = null;
+let _subjectPriorityNameMap = null;
+
+/**
+ * Lazy-initializes high-performance indexes for formula lookups.
+ * Maintains O(1) access for ID and exact name matches while preserving
+ * the first-occurrence priority from the original linear traversal.
+ */
+function _ensureIndexes() {
+  if (_allFormulas) return;
+  _allFormulas = [];
+  _formulaIdMap = new Map();
+  _globalNameMap = new Map();
+  _subjectPriorityNameMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    if (!_subjectPriorityNameMap.has(subj)) {
+      _subjectPriorityNameMap.set(subj, new Map());
+    }
+    const subjMap = _subjectPriorityNameMap.get(subj);
+
+    const processChapter = (ch, chdata, sec) => {
+      for (const f of chdata.formulas) {
+        // Construct item with property order matching original implementation
+        const item = sec
+          ? { subject: subj, section: sec, chapter: ch, ...f }
+          : { subject: subj, chapter: ch, ...f };
+
+        _allFormulas.push(item);
+
+        // ID index - first occurrence wins (e.g., Physics > Mathematics > Chemistry)
+        if (!_formulaIdMap.has(f.id)) {
+          _formulaIdMap.set(f.id, item);
+        }
+
+        const nl = f.name.toLowerCase();
+        // Subject-specific exact name index
+        if (!subjMap.has(nl)) {
+          subjMap.set(nl, item);
+        }
+        // Global exact name index
+        if (!_globalNameMap.has(nl)) {
+          _globalNameMap.set(nl, item);
+        }
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processChapter(ch, chdata);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processChapter(ch, chdata, sec);
         }
       }
     }
   }
-  return results;
 }
 
+/**
+ * Returns all formulas across all subjects.
+ * Optimized with lazy-initialized memoization.
+ */
+function getAllFormulas() {
+  _ensureIndexes();
+  // Return shallow copies to prevent unintended mutation of cache
+  return _allFormulas.map(f => ({ ...f }));
+}
+
+/**
+ * Retrieves a formula by its unique ID.
+ * Optimized O(1) lookup via Map.
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  const f = _formulaIdMap.get(id);
+  return f ? { ...f } : null;
 }
 
+/**
+ * Resolves related formulas globally with priority to the current subject.
+ * Optimized O(1) lookup for exact matches with fallback to prefix search.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+
+  // 1. Exact match in current subject (O(1))
+  const subjMap = _subjectPriorityNameMap.get(currentSubject);
+  let hit = subjMap ? subjMap.get(nl) : null;
+
+  // 2. Global exact match (O(1))
+  if (!hit) hit = _globalNameMap.get(nl);
+
+  // 3. Prefix fallback if >= 5 chars (O(N) but avoids rebuilding array)
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    hit = _allFormulas.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = _allFormulas.find(f => f.name.toLowerCase().startsWith(prefix));
   }
-  return hit || null;
+
+  return hit ? { ...hit } : null;
 }

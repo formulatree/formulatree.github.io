@@ -1,0 +1,3 @@
+## 2025-05-15 - Maintaining Functional Parity with Object Property Order
+**Learning:** When refactoring data retrieval logic for performance, functional parity often depends on exact object structures. Using spread syntax `{...f}` at the end of an object literal results in a different property order than at the beginning, which causes `JSON.stringify` or deep equality checks to fail if the original implementation had a specific order.
+**Action:** Always replicate the exact construction order of properties in optimized versions to ensure strict functional parity and satisfy legacy code or tests that might depend on it.
