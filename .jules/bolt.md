@@ -1,0 +1,3 @@
+## 2025-05-15 - Optimizing Data Retrieval with Duplicate Context
+**Learning:** In multi-subject data retrieval, prefix-based fallbacks must prioritize results within the current active subject context before searching globally to maintain functional parity with original linear search logic. Additionally, Map-based indexing must strictly follow the original traversal order (e.g., Physics > Mathematics > Chemistry) and use "first occurrence wins" logic for duplicate IDs to avoid regressions.
+**Action:** Always established a functional parity test that includes the original logic as a reference implementation to verify that optimized hash-map lookups return the exact same objects as the original linear search.
