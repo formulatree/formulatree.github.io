@@ -1,0 +1,3 @@
+## 2025-05-15 - Preserving Traversal Priority in Map-based Indexing
+**Learning:** In datasets where duplicate keys (IDs or names) exist across different categories, transitioning from linear search to Map-based lookup requires careful preservation of the original traversal order. A 'first occurrence wins' strategy during index construction is essential to maintain functional parity with the original 'find' logic.
+**Action:** Always verify the presence of duplicates in the source data and implement conditional Map population ('if (!map.has(key)) map.set(key, val)') to mirror the priority of the original sequential search.
