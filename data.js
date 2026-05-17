@@ -83,40 +83,108 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// Performance optimization: Memoization and high-speed lookup maps
+let _allFormulasCache = null;
+let _formulaIdMap = null;
+let _globalNameMap = null;
+let _subjectPriorityNameMap = null;
+
+/**
+ * Internal function to build high-performance lookup indexes lazily.
+ * Preserves the original traversal priority (Physics > Mathematics > Chemistry).
+ */
+function _ensureIndexes() {
+  if (_allFormulasCache) return;
+
+  _allFormulasCache = [];
+  _formulaIdMap = new Map();
+  _globalNameMap = new Map();
+  _subjectPriorityNameMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
-    if (sdata.chapters) {
-      for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
+    const subjNameMap = new Map();
+    _subjectPriorityNameMap.set(subj, subjNameMap);
+
+    const processChapter = (chName, chData, secName = null) => {
+      for (const f of chData.formulas) {
+        // Construct formula object exactly as in original implementation to preserve parity
+        const formulaObj = secName
+          ? { subject: subj, section: secName, chapter: chName, ...f }
+          : { subject: subj, chapter: chName, ...f };
+
+        _allFormulasCache.push(formulaObj);
+
+        // First occurrence wins to maintain parity with linear search
+        if (!_formulaIdMap.has(f.id)) {
+          _formulaIdMap.set(f.id, formulaObj);
+        }
+
+        const nameLower = f.name.toLowerCase();
+        if (!_globalNameMap.has(nameLower)) {
+          _globalNameMap.set(nameLower, formulaObj);
+        }
+        if (!subjNameMap.has(nameLower)) {
+          subjNameMap.set(nameLower, formulaObj);
         }
       }
+    };
+
+    if (sdata.chapters) {
+      for (const [chName, chData] of Object.entries(sdata.chapters)) {
+        processChapter(chName, chData);
+      }
     } else if (sdata.sections) {
-      for (const [sec, secdata] of Object.entries(sdata.sections)) {
-        for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+      for (const [secName, secData] of Object.entries(sdata.sections)) {
+        for (const [chName, chData] of Object.entries(secData.chapters)) {
+          processChapter(chName, chData, secName);
         }
       }
     }
   }
-  return results;
 }
 
+/**
+ * Returns all formulas as a flat array. Uses memoized cache.
+ */
+function getAllFormulas() {
+  _ensureIndexes();
+  // Return shallow copies of objects to prevent accidental mutation of the cache
+  return _allFormulasCache.map(f => ({ ...f }));
+}
+
+/**
+ * O(1) formula lookup by ID.
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  const f = _formulaIdMap.get(id);
+  return f ? { ...f } : null;
 }
 
+/**
+ * Resolves a formula by name or prefix, prioritizing the current subject.
+ * Uses high-speed Map lookups for exact matches.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Check current subject for exact match
+  const subjMap = _subjectPriorityNameMap.get(currentSubject);
+  if (subjMap && subjMap.has(nl)) return { ...subjMap.get(nl) };
+
+  // 2. Check global for exact match
+  const globalHit = _globalNameMap.get(nl);
+  if (globalHit) return { ...globalHit };
+
+  // 3. Fallback to prefix match if name length is sufficient
+  if (name.length >= 5) {
+    const prefix = nl.substring(0, 5);
+    // Still using linear search for prefix fallback to preserve original behavior exactly
+    let hit = _allFormulasCache.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = _allFormulasCache.find(f => f.name.toLowerCase().startsWith(prefix));
+    return hit ? { ...hit } : null;
   }
-  return hit || null;
+
+  return null;
 }
