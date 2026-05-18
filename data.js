@@ -120,3 +120,17 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Reusable UX Pattern: Global keydown listener for keyboard accessibility (Enter/Space)
+// Provides support for custom interactive elements with role="button", role="tab", or role="option"
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if (role === 'button' || role === 'tab' || role === 'option') {
+      if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A') {
+        e.preventDefault();
+        e.target.click();
+      }
+    }
+  }
+});
