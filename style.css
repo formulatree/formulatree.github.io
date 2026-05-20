@@ -636,6 +636,7 @@ body {
 }
 
 .search-input-row svg { color: var(--text3); flex-shrink: 0; }
+.search-input-row:focus-within { border-bottom-color: var(--accent); }
 
 .search-input {
   flex: 1;
@@ -664,7 +665,7 @@ body {
   gap: 14px;
 }
 
-.search-result:hover { background: var(--surface2); }
+.search-result:hover, .search-result:focus { background: var(--surface2); outline: none; }
 
 .search-result-icon {
   font-size: 18px;
@@ -683,6 +684,8 @@ body {
   color: var(--text3);
   font-size: 14px;
 }
+[tabindex="0"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 
 /* ── Animations ── */
 @keyframes fadeUp {
