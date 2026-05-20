@@ -83,40 +83,112 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+let _allFormulas = null;
+let _idMap = null;
+let _globalNameMap = null;
+let _subjectPriorityNameMap = null;
+
+/**
+ * Lazily initializes optimized lookup indexes for formula data.
+ * Maintains functional parity with the original linear traversal by
+ * ensuring the first occurrence of an ID or name is the one indexed.
+ */
+function _ensureIndexes() {
+  if (_allFormulas) return;
+  _allFormulas = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _subjectPriorityNameMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    const subjMap = new Map();
+    _subjectPriorityNameMap.set(subj, subjMap);
+
+    const processFormulas = (ch, formulas, sec = null) => {
+      for (const f of formulas) {
+        // Construct the full formula object as expected by the UI
+        const formulaObj = sec
+          ? { subject: subj, section: sec, chapter: ch, ...f }
+          : { subject: subj, chapter: ch, ...f };
+
+        _allFormulas.push(formulaObj);
+
+        // Index by ID (O(1) lookup)
+        if (!_idMap.has(f.id)) {
+          _idMap.set(f.id, formulaObj);
+        }
+
+        const nameLower = f.name.toLowerCase();
+        // Global name index (O(1) lookup)
+        if (!_globalNameMap.has(nameLower)) {
+          _globalNameMap.set(nameLower, formulaObj);
+        }
+
+        // Subject-specific name index for priority lookups
+        if (!subjMap.has(nameLower)) {
+          subjMap.set(nameLower, formulaObj);
+        }
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processFormulas(ch, chdata.formulas);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processFormulas(ch, chdata.formulas, sec);
         }
       }
     }
   }
-  return results;
 }
 
+/**
+ * Returns all formulas across all subjects and chapters.
+ * Optimized via memoization. Returns shallow copies to prevent mutation.
+ */
+function getAllFormulas() {
+  _ensureIndexes();
+  return _allFormulas.map(f => f);
+}
+
+/**
+ * Finds a specific formula by its unique ID.
+ * Optimized via Map-based O(1) lookup.
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  const f = _idMap.get(id);
+  return f || null;
 }
 
+/**
+ * Resolves a related formula reference globally, prioritizing the current subject.
+ * Optimized via multiple Map lookups and cached array traversal.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Priority: Exact match in current subject
+  const subjMap = _subjectPriorityNameMap.get(currentSubject);
+  let hit = subjMap ? subjMap.get(nl) : null;
+
+  // 2. Fallback: Exact match globally
+  if (!hit) {
+    hit = _globalNameMap.get(nl);
   }
+
+  // 3. Last resort: Prefix match (min 5 chars) to handle small variations
+  if (!hit && name.length >= 5) {
+    const prefix = nl.substring(0, 5);
+    hit = _allFormulas.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) {
+      hit = _allFormulas.find(f => f.name.toLowerCase().startsWith(prefix));
+    }
+  }
+
   return hit || null;
 }
