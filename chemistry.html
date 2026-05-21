@@ -19,9 +19,9 @@
     <a href="mathematics.html" class="nav-link">Mathematics</a>
     <a href="chemistry.html" class="nav-link active">Chemistry</a>
   </nav>
-  <button class="search-btn" onclick="openSearch()">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    Search <kbd>⌘K</kbd>
+  <button class="search-btn" onclick="openSearch()" aria-label="Search Formulas">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    Search <kbd aria-hidden="true">⌘K</kbd>
   </button>
 </header>
 <main>
@@ -31,7 +31,7 @@
         <a href="index.html">Home</a><span class="sep">/</span><span class="current">Chemistry</span>
       </div>
       <div class="page-title-row">
-        <div class="page-icon" style="background:rgba(251,113,133,0.12);">⚗</div>
+        <div class="page-icon" style="background:rgba(251,113,133,0.12);">🧪</div>
         <div class="page-title">Chemistry</div>
       </div>
       <div class="page-sub" id="pageSub">Physical · Inorganic · Organic — 21 chapters · 189 formulas</div>
@@ -47,20 +47,20 @@
 <footer class="footer">
   <div class="container">FormulaTree · JEE Formula Revision</div>
 </footer>
-<div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)">
-  <div class="search-modal">
+<div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)" aria-hidden="true">
+  <div class="search-modal" role="dialog" aria-modal="true" aria-label="Search Formulas">
     <div class="search-input-row">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input class="search-input" id="searchInput" placeholder="Search chemistry formulas…" autocomplete="off">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" id="searchInput" placeholder="Search chemistry formulas…" autocomplete="off" aria-label="Search chemistry formulas">
     </div>
-    <div class="search-results" id="searchResults"><div class="search-empty">Start typing to search…</div></div>
+    <div class="search-results" id="searchResults" role="listbox"><div class="search-empty">Start typing to search…</div></div>
   </div>
 </div>
 <div class="pill-popup-overlay" id="pillPopupOverlay" onclick="closePillPopup()"></div>
 <div class="pill-popup" id="pillPopup" style="display:none">
   <div class="pill-popup-title">
     <span id="pillPopupTitle"></span>
-    <button class="pill-popup-close" onclick="closePillPopup()">&#x2715;</button>
+    <button class="pill-popup-close" onclick="closePillPopup()" aria-label="Close">&#x2715;</button>
   </div>
   <div class="pill-popup-body" id="pillPopupBody"></div>
 </div>
@@ -187,8 +187,8 @@ function navigateToFormula(id, chapter, subject, section) {
   }
 }
 
-function openSearch() { document.getElementById('searchOverlay').classList.add('open'); document.getElementById('searchInput').focus(); }
-function closeSearch() { document.getElementById('searchOverlay').classList.remove('open'); document.getElementById('searchInput').value = ''; document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing…</div>'; }
+function openSearch() { const overlay = document.getElementById('searchOverlay'); overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false'); document.getElementById('searchInput').focus(); }
+function closeSearch() { const overlay = document.getElementById('searchOverlay'); overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true'); document.getElementById('searchInput').value = ''; document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing to search…</div>'; }
 function closeSearchOutside(e) { if (e.target === document.getElementById('searchOverlay')) closeSearch(); }
 
 document.addEventListener('keydown', e => {
@@ -203,8 +203,8 @@ document.getElementById('searchInput').addEventListener('input', function() {
   const all = getAllFormulas();
   const matches = all.filter(f => f.name.toLowerCase().includes(q) || f.equation.toLowerCase().includes(q) || f.explanation.toLowerCase().includes(q)).slice(0,10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
-  const icons = { Physics: '⛛', Mathematics: '∑', Chemistry: '⚗' };
-  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
+  const icons = { Physics: '⚛', Mathematics: '∑', Chemistry: '🧪' };
+  results.innerHTML = matches.map(f => `<div class="search-result" role="option" tabindex="0" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
     <div class="search-result-icon">${icons[f.subject]||'\uD83D\uDCDA'}</div>
     <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} · ${f.section ? f.section+' · ' : ''}${f.chapter}</div></div>
   </div>`).join('');

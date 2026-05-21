@@ -120,3 +120,25 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(kbd => {
+      if (kbd.textContent.includes('⌘K')) {
+        kbd.textContent = kbd.textContent.replace('⌘K', 'Ctrl+K');
+      }
+    });
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target.closest('[role="button"], [role="tab"], [role="option"]');
+    if (target && !['BUTTON', 'A'].includes(target.tagName)) {
+      e.preventDefault();
+      target.click();
+    }
+  }
+});
