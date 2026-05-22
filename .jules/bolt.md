@@ -1,0 +1,3 @@
+## 2025-05-15 - Subject-Priority Data Indexing
+**Learning:** The FormulaTree dataset contains duplicate formula IDs and names across different subjects (e.g., 'gen1' exists in both Physics and Mathematics). The original linear search logic implicitly favored the first occurrence in the traversal order (Physics > Mathematics > Chemistry). Simple Map insertion would overwrite earlier entries with later ones, breaking functional parity.
+**Action:** When implementing Map-based indexes in this codebase, always use a 'first-occurrence-wins' strategy (e.g., `if (!map.has(key)) map.set(key, value)`) to strictly preserve the original traversal priority.
