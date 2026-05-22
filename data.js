@@ -83,40 +83,68 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+var _formulaCache = null;
+var _idMap = new Map();
+var _globalNameMap = new Map();
+var _subjectPriorityNameMap = new Map();
+
+function _ensureIndexes() {
+  if (_formulaCache) return;
+  _formulaCache = [];
+
+  const _indexFormula = (f) => {
+    _formulaCache.push(f);
+    if (!_idMap.has(f.id)) _idMap.set(f.id, f);
+    const nl = f.name.toLowerCase();
+    if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, f);
+    const subjKey = `${f.subject}:${nl}`;
+    if (!_subjectPriorityNameMap.has(subjKey)) _subjectPriorityNameMap.set(subjKey, f);
+  };
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
+          _indexFormula({ subject: subj, chapter: ch, ...f });
         }
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
           for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
+            _indexFormula({ subject: subj, section: sec, chapter: ch, ...f });
           }
         }
       }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  return _formulaCache.map(f => ({ ...f }));
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  const f = _idMap.get(id);
+  return f ? { ...f } : null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+
+  // 1. Exact match with subject priority
+  let hit = _subjectPriorityNameMap.get(`${currentSubject}:${nl}`);
+  if (!hit) hit = _globalNameMap.get(nl);
+
+  // 2. Prefix match fallback (for names >= 5 chars)
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    hit = _formulaCache.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = _formulaCache.find(f => f.name.toLowerCase().startsWith(prefix));
   }
-  return hit || null;
+
+  return hit ? { ...hit } : null;
 }
