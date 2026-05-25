@@ -1,0 +1,3 @@
+## 2025-05-15 - Memoized Data Indexing
+**Learning:** For static datasets used in a web application, linear search on every retrieval (especially when nested) creates an $O(N)$ or $O(N^2)$ bottleneck. Implementing a lazy-initialized Map-based indexing system can provide $O(1)$ lookups. However, functional parity must be maintained, especially for "first-match-wins" logic in datasets with duplicate IDs/names.
+**Action:** Use Map-based indexes (e.g., `_idMap`, `_globalNameMap`) and return shallow copies (`{...f}`) to prevent accidental mutation of the cache by calling code. Always verify functional parity with a dedicated test script before and after optimization.

@@ -83,40 +83,87 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
+let _allFormulasCache = null;
+let _idMap = null;
+let _globalNameMap = null;
+let _subjectPriorityNameMap = null;
+
+function _ensureIndexes() {
+  if (_allFormulasCache) return;
+
   const results = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _subjectPriorityNameMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    const processFormula = (f, ch, sec = null) => {
+      const fullF = { subject: subj, ...(sec && { section: sec }), chapter: ch, ...f };
+      results.push(fullF);
+
+      if (!_idMap.has(f.id)) _idMap.set(f.id, fullF);
+
+      const nl = f.name.toLowerCase();
+      if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, fullF);
+
+      const subjKey = subj + ":" + nl;
+      if (!_subjectPriorityNameMap.has(subjKey)) _subjectPriorityNameMap.set(subjKey, fullF);
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        for (const f of chdata.formulas) processFormula(f, ch);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          for (const f of chdata.formulas) processFormula(f, ch, sec);
         }
       }
     }
   }
-  return results;
+  _allFormulasCache = results;
 }
 
+/**
+ * Returns all formulas across all subjects.
+ * Uses memoized cache for performance.
+ */
+function getAllFormulas() {
+  _ensureIndexes();
+  return _allFormulasCache.map(f => ({ ...f }));
+}
+
+/**
+ * Finds a formula by its unique ID.
+ * Optimized with Map-based lookup (O(1)).
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  const f = _idMap.get(id);
+  return f ? { ...f } : null;
 }
 
+/**
+ * Resolves a related formula name within a subject context.
+ * Optimized with Map-based lookups and lazy prefix search.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+
+  // 1. Subject-specific exact match (highest priority)
+  let hit = _subjectPriorityNameMap.get(currentSubject + ":" + nl);
+
+  // 2. Global exact match
+  if (!hit) hit = _globalNameMap.get(nl);
+
+  // 3. Prefix-based fallback (for older data with slight name mismatches)
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    hit = _allFormulasCache.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = _allFormulasCache.find(f => f.name.toLowerCase().startsWith(prefix));
   }
-  return hit || null;
+
+  return hit ? { ...hit } : null;
 }
