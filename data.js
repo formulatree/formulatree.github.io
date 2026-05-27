@@ -83,40 +83,73 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// Optimized data structures for high-performance formula retrieval
+let _allFormulas = null; // Flattened cache of all formulas
+let _idMap = null; // O(1) lookup by ID
+let _globalNameMap = null; // O(1) lookup by case-insensitive name
+let _subjectPriorityNameMap = null; // O(1) lookup prioritizing active subject
+
+/**
+ * Lazily initializes formula indexes for fast retrieval.
+ * Maintains 'first-occurrence-wins' priority for duplicate IDs/names.
+ */
+function _ensureIndexes() {
+  if (_allFormulas) return;
+  _allFormulas = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _subjectPriorityNameMap = new Map();
+
+  function processFormula(f, context) {
+    const entry = { ...context, ...f };
+    _allFormulas.push(entry);
+    if (!_idMap.has(f.id)) _idMap.set(f.id, entry);
+    const nl = f.name.toLowerCase();
+    if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, entry);
+    const subjKey = context.subject + ':' + nl;
+    if (!_subjectPriorityNameMap.has(subjKey)) _subjectPriorityNameMap.set(subjKey, entry);
+  }
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
+          processFormula(f, { subject: subj, chapter: ch });
         }
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
           for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
+            processFormula(f, { subject: subj, section: sec, chapter: ch });
           }
         }
       }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  return _allFormulas.map(f => ({ ...f }));
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  const hit = _idMap.get(id);
+  return hit ? { ...hit } : null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+  let hit = _subjectPriorityNameMap.get(currentSubject + ':' + nl);
+  if (!hit) hit = _globalNameMap.get(nl);
+
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    hit = _allFormulas.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = _allFormulas.find(f => f.name.toLowerCase().startsWith(prefix));
   }
-  return hit || null;
+  return hit ? { ...hit } : null;
 }
