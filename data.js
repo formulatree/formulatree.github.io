@@ -120,3 +120,22 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(k => {
+      if (k.textContent.includes('⌘')) k.textContent = k.textContent.replace('⌘', 'Ctrl+');
+    });
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if (['button', 'tab', 'option'].includes(role)) {
+      e.preventDefault();
+      e.target.click();
+    }
+  }
+});
