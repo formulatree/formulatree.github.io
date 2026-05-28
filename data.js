@@ -120,3 +120,23 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// UX Enhancements: Platform-aware shortcuts and global keyboard accessibility
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(k => {
+      if (k.textContent === '⌘K') k.textContent = 'Ctrl+K';
+    });
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const interactive = e.target.closest('[role="button"], [role="option"], [role="tab"]');
+    if (interactive && !['BUTTON', 'A', 'INPUT'].includes(e.target.tagName)) {
+      if (e.key === ' ') e.preventDefault();
+      interactive.click();
+    }
+  }
+});
