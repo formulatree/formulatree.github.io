@@ -106,7 +106,7 @@ function renderFormulaCard(f, i) {
   }).join('');
   const jeeHtml = (f.jee || []).map(j => `<span class="jee-pill">${j}</span>`).join('');
   return `<div class="formula-card fade-up" id="fc-${f.id}">
-    <div class="formula-header" onclick="toggleCard('${f.id}')">
+    <div class="formula-header" role="button" tabindex="0" onclick="toggleCard('${f.id}')">
       <span class="formula-num">${String(i+1).padStart(2,'0')}</span>
       <span class="formula-name">${f.name}</span>
       <span class="formula-eq-preview" style="color:${color};background:${color}18">${f.equation}</span>
@@ -204,7 +204,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
   const matches = all.filter(f => f.name.toLowerCase().includes(q) || f.equation.toLowerCase().includes(q) || f.explanation.toLowerCase().includes(q)).slice(0,10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
   const icons = { Physics: '⛛', Mathematics: '∑', Chemistry: '⚗' };
-  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
+  results.innerHTML = matches.map(f => `<div class="search-result" role="option" tabindex="0" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
     <div class="search-result-icon">${icons[f.subject]||'\uD83D\uDCDA'}</div>
     <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} · ${f.section ? f.section+' · ' : ''}${f.chapter}</div></div>
   </div>`).join('');
