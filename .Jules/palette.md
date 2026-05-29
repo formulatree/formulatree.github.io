@@ -1,0 +1,3 @@
+## 2025-05-14 - Keyboard Accessibility for Custom Interactive Elements
+**Learning:** Custom interactive elements (like divs with onclick handlers) must be made keyboard-accessible by adding role="button" (or appropriate), tabindex="0", and a global or local keydown listener for Enter and Space keys. The listener must exclude native interactive elements (BUTTON, A, etc.) to avoid hijacking default browser behavior.
+**Action:** Always verify that custom interactive components are focusable and can be activated via keyboard, and implement a safe, scoped keydown listener to bridge the gap between custom and native interactivity.
