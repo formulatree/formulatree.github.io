@@ -1,0 +1,3 @@
+## 2025-05-14 - Accessibility & Keyboard Interaction Enhancements
+**Learning:** In a static site with many custom interactive elements (divs and spans), focus management and keyboard listeners are crucial for accessibility. Adding `role="button"`, `tabindex="0"`, and a global `keydown` listener provides a robust way to ensure keyboard parity without refactoring everything to native `<button>` elements. Platform-aware shortcut hints (⌘K vs Ctrl+K) significantly improve the "delight" factor for non-Mac users.
+**Action:** When implementing custom interactive UI elements, always pair `role` and `tabindex` with a global or element-specific keyboard listener for 'Enter' and 'Space'.
