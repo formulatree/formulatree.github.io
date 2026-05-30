@@ -83,40 +83,69 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+let _formulaCache = null;
+let _idMap = null;
+let _globalNameMap = null;
+let _subjectPriorityNameMap = null;
+
+function _ensureIndexes() {
+  if (_formulaCache) return;
+  _formulaCache = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _subjectPriorityNameMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    const subjNameMap = new Map();
+    _subjectPriorityNameMap.set(subj, subjNameMap);
+
+    const processFormula = (f, ch, sec) => {
+      // Functional parity: result objects must have correct property order
+      const fullF = { subject: subj, ...(sec && { section: sec }), chapter: ch, ...f };
+      _formulaCache.push(fullF);
+      // First occurrence wins for duplicate IDs/names
+      if (!_idMap.has(f.id)) _idMap.set(f.id, fullF);
+      const nl = f.name.toLowerCase();
+      if (!subjNameMap.has(nl)) subjNameMap.set(nl, fullF);
+      if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, fullF);
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        for (const f of chdata.formulas) processFormula(f, ch);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          for (const f of chdata.formulas) processFormula(f, ch, sec);
         }
       }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  // Return shallow copies to prevent cache mutation (maintaining parity with original O(N) object creation)
+  return _formulaCache.map(f => ({ ...f }));
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  const f = _idMap.get(id);
+  return f ? { ...f } : null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+  const subjMap = _subjectPriorityNameMap.get(currentSubject);
+  let hit = subjMap ? subjMap.get(nl) : null;
+  if (!hit) hit = _globalNameMap.get(nl);
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    hit = _formulaCache.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(prefix));
+    if (!hit) hit = _formulaCache.find(f => f.name.toLowerCase().startsWith(prefix));
   }
-  return hit || null;
+  return hit ? { ...hit } : null;
 }
