@@ -120,3 +120,26 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+// Global keyboard accessibility for role="button" and role="option"
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if (role === 'button' || role === 'option') {
+      // Avoid triggering on native interactive elements
+      if (['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      e.preventDefault();
+      e.target.click();
+    }
+  }
+});
+// Update search shortcut hint based on platform
+window.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(kbd => {
+      if (kbd.textContent === '⌘K') {
+        kbd.textContent = 'Ctrl+K';
+      }
+    });
+  }
+});
