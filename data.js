@@ -120,3 +120,26 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// UX & Accessibility Helpers
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = (navigator.platform || '').toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(k => {
+      if (k.textContent.includes('⌘')) k.textContent = k.textContent.replace('⌘', 'Ctrl+');
+    });
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if (role === 'button' || role === 'option') {
+      const tag = e.target.tagName;
+      if (!['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) {
+        e.preventDefault();
+        e.target.click();
+      }
+    }
+  }
+});

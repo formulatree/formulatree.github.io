@@ -1,0 +1,3 @@
+## 2026-05-31 - Enhancing Keyboard Interactivity for Custom UI Elements
+**Learning:** In static sites using divs or spans as interactive elements (e.g., search results, accordion headers), adding tabindex='0' and ARIA roles is insufficient for full accessibility; these elements do not natively handle 'Enter' or 'Space' keys. A global event listener can bridge this gap by delegating clicks to elements with specific roles.
+**Action:** When using non-native interactive roles like 'button' or 'option', always implement a keyboard listener to handle activation keys, ensuring it excludes native elements (BUTTON, A, etc.) to prevent redundant triggers.
