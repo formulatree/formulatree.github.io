@@ -120,3 +120,25 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Update shortcut hints for non-Mac users
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(k => {
+      if (k.textContent.includes('⌘K')) k.textContent = k.textContent.replace('⌘K', 'Ctrl+K');
+    });
+  }
+
+  // Global keyboard activation for accessible roles
+  document.addEventListener('keydown', e => {
+    if (['Enter', ' '].includes(e.key)) {
+      if (['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      const target = e.target.closest('[role="button"], [role="option"]');
+      if (target) {
+        e.preventDefault();
+        target.click();
+      }
+    }
+  });
+});
