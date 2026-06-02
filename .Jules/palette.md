@@ -1,0 +1,3 @@
+## 2026-06-02 - Enhancing keyboard accessibility and ARIA semantics
+**Learning:** Adding role='button' and tabindex='0' to div elements is only the first step; a corresponding keydown listener is required to ensure 'Enter' and 'Space' trigger the click event, maintaining functional parity with native buttons. ARIA labels on close buttons and search modals significantly improve the experience for screen reader users.
+**Action:** Always implement a global or local keydown listener when using non-native interactive roles, and ensure ARIA attributes like aria-expanded and aria-selected are dynamically updated during interaction.
