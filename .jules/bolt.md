@@ -1,0 +1,3 @@
+## 2025-05-14 - Map-based indexing with priority preservation
+**Learning:** Found that `data.js` lookups were O(N) due to linear traversal of a deeply nested object. Implementing Map-based indexes provided a ~100x speedup. A critical detail was the presence of duplicate IDs (e.g., `hyd1`) across different subjects/sections. To maintain functional parity with the original `.find()` behavior, the indexer must use "first-match-wins" logic by only setting a key in the Map if it doesn't already exist.
+**Action:** When refactoring traversal-based lookups into hash maps, always check for duplicate keys and implement a priority strategy (e.g., first-occurrence) to ensure no behavioral regressions.
