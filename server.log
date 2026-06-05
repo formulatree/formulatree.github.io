@@ -1,0 +1,5 @@
+127.0.0.1 - - [05/Jun/2026 14:53:45] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 14:53:45] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 14:53:45] "GET /data.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 14:53:49] "GET /chemistry.html?chapter=General%20Organic%20Chemistry%20(GOC)&id=goc4&section=Organic HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 14:53:49] "GET /popup_defs.js HTTP/1.1" 200 -

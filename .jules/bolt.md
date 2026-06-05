@@ -1,0 +1,3 @@
+## 2025-06-05 - Map-based Indexing for Large Data Objects
+**Learning:** In applications using large static JSON-like objects (e.g., 300+ entries) for lookups, repeated linear traversal using `Object.entries` and `Array.find` becomes a major bottleneck for repeated operations like global search or formula resolution.
+**Action:** Implement lazy-initialized Map-based indexes and memoized caches. Building the index once on the first access significantly improves performance (O(1) lookups) with minimal startup cost. Always return shallow copies of cached arrays to prevent accidental global state mutation by consumers.
