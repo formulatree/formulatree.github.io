@@ -31,7 +31,7 @@
         <a href="index.html">Home</a><span class="sep">/</span><span class="current">Chemistry</span>
       </div>
       <div class="page-title-row">
-        <div class="page-icon" style="background:rgba(251,113,133,0.12);">⚗</div>
+        <div class="page-icon" style="background:rgba(251,113,133,0.12);" aria-hidden="true">⚗</div>
         <div class="page-title">Chemistry</div>
       </div>
       <div class="page-sub" id="pageSub">Physical · Inorganic · Organic — 21 chapters · 189 formulas</div>
@@ -47,7 +47,7 @@
 <footer class="footer">
   <div class="container">FormulaTree · JEE Formula Revision</div>
 </footer>
-<div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)">
+<div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)" role="dialog" aria-modal="true" aria-label="Search">
   <div class="search-modal">
     <div class="search-input-row">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -60,7 +60,7 @@
 <div class="pill-popup" id="pillPopup" style="display:none">
   <div class="pill-popup-title">
     <span id="pillPopupTitle"></span>
-    <button class="pill-popup-close" onclick="closePillPopup()">&#x2715;</button>
+    <button class="pill-popup-close" onclick="closePillPopup()" aria-label="Close definition">&#x2715;</button>
   </div>
   <div class="pill-popup-body" id="pillPopupBody"></div>
 </div>
