@@ -83,40 +83,92 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// Optimization: Internal cache and Map-based indexes for O(1) lookups.
+// Built lazily on first access to avoid overhead if data is not used.
+let _formulaCache = null;
+let _idMap = null;
+let _globalNameMap = null;
+let _subjectPriorityNameMap = null;
+
+/**
+ * Builds the formula cache and lookup indexes if they haven't been created yet.
+ * Respects original traversal order to ensure first-match-wins priority for duplicate IDs.
+ */
+function _ensureIndexes() {
+  if (_formulaCache) return;
+  _formulaCache = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _subjectPriorityNameMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    _subjectPriorityNameMap.set(subj, new Map());
+    const processFormulas = (formulas, extra) => {
+      for (const f of formulas) {
+        const full = { subject: subj, ...extra, ...f };
+        _formulaCache.push(full);
+        // ID lookup - first occurrence wins to maintain functional parity
+        if (!_idMap.has(f.id)) _idMap.set(f.id, full);
+        const nl = f.name.toLowerCase();
+        // Global and per-subject name lookups for resolveGlobalRelated
+        if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, full);
+        if (!_subjectPriorityNameMap.get(subj).has(nl)) _subjectPriorityNameMap.get(subj).set(nl, full);
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processFormulas(chdata.formulas, { chapter: ch });
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processFormulas(chdata.formulas, { section: sec, chapter: ch });
         }
       }
     }
   }
-  return results;
 }
 
+/**
+ * Returns all formulas as a flattened array.
+ * Optimized: Uses memoized cache to avoid repeated traversals.
+ */
+function getAllFormulas() {
+  _ensureIndexes();
+  return [..._formulaCache]; // Shallow copy to prevent accidental mutation of the cache
+}
+
+/**
+ * Retrieves a formula by its unique ID.
+ * Optimized: O(1) Map lookup instead of O(N) linear search.
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
+/**
+ * Resolves a related formula name into a formula object.
+ * Optimized: Uses name-based Map lookups for instant resolution.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Priority: Current subject match
+  let hit = (_subjectPriorityNameMap.get(currentSubject) || new Map()).get(nl);
+  if (hit) return hit;
+
+  // 2. Fallback: Global name match
+  hit = _globalNameMap.get(nl);
+  if (hit) return hit;
+
+  // 3. Last resort: Fuzzy prefix search (O(N), rare fallback)
+  if (name.length >= 5) {
+    const pref = nl.substring(0, 5);
+    hit = _formulaCache.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(pref));
+    if (!hit) hit = _formulaCache.find(f => f.name.toLowerCase().startsWith(pref));
   }
   return hit || null;
 }
