@@ -83,40 +83,81 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+let _formulaCache, _idMap, _globalNameMap, _subjectNameMaps, _globalPrefixMap, _subjectPrefixMaps;
+
+function _ensureIndexes() {
+  if (_formulaCache) return;
+  _formulaCache = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _subjectNameMaps = new Map();
+  _globalPrefixMap = new Map();
+  _subjectPrefixMaps = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    _subjectNameMaps.set(subj, new Map());
+    _subjectPrefixMaps.set(subj, new Map());
+
+    const processChapter = (ch, chdata, sec) => {
+      for (const f of chdata.formulas) {
+        const formulaObj = {
+          subject: subj,
+          ...(sec !== undefined && { section: sec }),
+          chapter: ch,
+          ...f
+        };
+        _formulaCache.push(formulaObj);
+
+        if (!_idMap.has(f.id)) _idMap.set(f.id, formulaObj);
+
+        const nl = f.name.toLowerCase();
+        if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, formulaObj);
+        if (!_subjectNameMaps.get(subj).has(nl)) _subjectNameMaps.get(subj).set(nl, formulaObj);
+
+        if (nl.length >= 5) {
+          const pref = nl.substring(0, 5);
+          if (!_globalPrefixMap.has(pref)) _globalPrefixMap.set(pref, formulaObj);
+          if (!_subjectPrefixMaps.get(subj).has(pref)) _subjectPrefixMaps.get(subj).set(pref, formulaObj);
+        }
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processChapter(ch, chdata);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processChapter(ch, chdata, sec);
         }
       }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  return [..._formulaCache];
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+
+  let hit = (_subjectNameMaps.get(currentSubject) || new Map()).get(nl);
+  if (!hit) hit = _globalNameMap.get(nl);
+
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const pref = nl.substring(0, 5);
+    hit = (_subjectPrefixMaps.get(currentSubject) || new Map()).get(pref);
+    if (!hit) hit = _globalPrefixMap.get(pref);
   }
+
   return hit || null;
 }
