@@ -120,3 +120,25 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Platform-aware shortcut hints (Ctrl+K for non-Mac)
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(k => {
+      if (k.textContent === '⌘K') k.textContent = 'Ctrl+K';
+    });
+  }
+
+  // 2. Keyboard navigation for custom interactive elements
+  document.addEventListener('keydown', e => {
+    const target = e.target.closest('[role="button"], [role="option"]');
+    if (target && (e.key === 'Enter' || e.key === ' ')) {
+      // Don't interfere with native buttons or links
+      if (['BUTTON', 'A', 'INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+      e.preventDefault();
+      target.click();
+    }
+  });
+});
