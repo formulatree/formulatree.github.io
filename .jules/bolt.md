@@ -1,0 +1,3 @@
+## 2025-05-15 - Formula Data Indexing Optimization
+**Learning:** The application used O(n) linear scans for every formula lookup, causing potential UI lag during search as the data set grew. By implementing lazy Map-based indexing, retrieval became O(1). Functional parity was maintained by ensuring the indexing logic respects the original traversal order for duplicate IDs.
+**Action:** Always prefer Map-based hash lookups over repeated array iterations for datasets that are frequently queried by ID or unique keys. Ensure functional parity with original linear logic when duplicate keys exist by implementing 'first-match-wins' logic.
