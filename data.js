@@ -120,3 +120,24 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Accessibility & Global Listeners
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if ((role === 'button' || role === 'option') &&
+        !['BUTTON', 'A', 'INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+      e.preventDefault();
+      e.target.click();
+    }
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(kbd => {
+      if (kbd.textContent === '⌘K') kbd.textContent = 'Ctrl+K';
+    });
+  }
+});
