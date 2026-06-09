@@ -83,40 +83,110 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+let _allFormulasCache = null;
+let _idMap = null;
+let _subjectNameMaps = null; // Map<Subject, Map<Name, Formula>>
+let _globalNameMap = null; // Map<Name, Formula>
+let _subjectPrefixMaps = null; // Map<Subject, Map<Prefix, Formula>>
+let _globalPrefixMap = null; // Map<Prefix, Formula>
+
+/**
+ * Lazily initializes all performance-optimized indexes.
+ * Maintains functional parity with original linear traversal (first-match wins).
+ */
+function _ensureIndexes() {
+  if (_allFormulasCache) return;
+
+  _allFormulasCache = [];
+  _idMap = new Map();
+  _subjectNameMaps = new Map();
+  _globalNameMap = new Map();
+  _subjectPrefixMaps = new Map();
+  _globalPrefixMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    if (!_subjectNameMaps.has(subj)) _subjectNameMaps.set(subj, new Map());
+    if (!_subjectPrefixMaps.has(subj)) _subjectPrefixMaps.set(subj, new Map());
+
+    const snMap = _subjectNameMaps.get(subj);
+    const spMap = _subjectPrefixMaps.get(subj);
+
+    const processFormula = (f, ch, sec) => {
+      const entry = { subject: subj, ...(sec && { section: sec }), chapter: ch, ...f };
+      _allFormulasCache.push(entry);
+
+      // Map-based O(1) lookups
+      if (!_idMap.has(f.id)) _idMap.set(f.id, entry);
+
+      const nl = f.name.toLowerCase();
+      if (!snMap.has(nl)) snMap.set(nl, entry);
+      if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, entry);
+
+      if (f.name.length >= 5) {
+        const pref = nl.substring(0, 5);
+        if (!spMap.has(pref)) spMap.set(pref, entry);
+        if (!_globalPrefixMap.has(pref)) _globalPrefixMap.set(pref, entry);
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
+          processFormula(f, ch);
         }
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
           for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
+            processFormula(f, ch, sec);
           }
         }
       }
     }
   }
-  return results;
 }
 
+/**
+ * Returns all formulas with subject/chapter context.
+ * Memoized for performance. Returns a shallow copy to prevent mutation.
+ */
+function getAllFormulas() {
+  _ensureIndexes();
+  return [..._allFormulasCache];
+}
+
+/**
+ * Finds a formula by its unique ID.
+ * Optimized with Map-based O(1) lookup.
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
+/**
+ * Resolves a related formula name to its object, prioritizing current subject.
+ * Optimized with Map-based lookups and prefix caching.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Exact match in currentSubject
+  const snMap = _subjectNameMaps.get(currentSubject);
+  if (snMap && snMap.has(nl)) return snMap.get(nl);
+
+  // 2. Exact match globally
+  if (_globalNameMap.has(nl)) return _globalNameMap.get(nl);
+
+  // 3 & 4. Prefix match (fallback if exact match fails)
+  if (name.length >= 5) {
+    const pref = nl.substring(0, 5);
+    const spMap = _subjectPrefixMaps.get(currentSubject);
+    if (spMap && spMap.has(pref)) return spMap.get(pref);
+    if (_globalPrefixMap.has(pref)) return _globalPrefixMap.get(pref);
   }
-  return hit || null;
+
+  return null;
 }
