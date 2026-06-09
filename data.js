@@ -120,3 +120,30 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Palette UX Enhancements
+document.addEventListener('DOMContentLoaded', () => {
+  // Update keyboard hints for non-Mac users
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(k => {
+      if (k.textContent.includes('⌘')) k.textContent = k.textContent.replace('⌘', 'Ctrl+');
+    });
+  }
+});
+
+// Global keyboard listener for custom interactive roles
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target;
+    const role = target.getAttribute('role');
+    if (role === 'button' || role === 'option') {
+      // Ignore native interactive elements to prevent double-activation
+      const nativeTags = ['BUTTON', 'A', 'INPUT', 'TEXTAREA'];
+      if (nativeTags.includes(target.tagName)) return;
+
+      e.preventDefault();
+      target.click();
+    }
+  }
+});
