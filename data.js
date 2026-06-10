@@ -83,40 +83,111 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// Internal cache and indexes for performance
+let _formulaCache = null;
+let _idMap = null;
+let _globalNameMap = null;
+let _subjectNameMaps = new Map();
+let _globalPrefixMap = null;
+let _subjectPrefixMaps = new Map();
+
+/**
+ * Lazily initializes the formula cache and Map-based indexes for O(1) lookups.
+ * Maintains functional parity by storing only the first occurrence of each key.
+ */
+function _ensureIndexes() {
+  if (_formulaCache) return;
+
+  _formulaCache = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _globalPrefixMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    if (!_subjectNameMaps.has(subj)) _subjectNameMaps.set(subj, new Map());
+    if (!_subjectPrefixMaps.has(subj)) _subjectPrefixMaps.set(subj, new Map());
+
+    const processFormulas = (formulas, section, chapter) => {
+      for (const f of formulas) {
+        const entry = section
+          ? { subject: subj, section, chapter, ...f }
+          : { subject: subj, chapter, ...f };
+
+        _formulaCache.push(entry);
+
+        // Populate indexes, maintaining 'first-match-wins' parity
+        if (!_idMap.has(f.id)) _idMap.set(f.id, entry);
+
+        const nl = f.name.toLowerCase();
+        if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, entry);
+        if (!_subjectNameMaps.get(subj).has(nl)) _subjectNameMaps.get(subj).set(nl, entry);
+
+        if (nl.length >= 5) {
+          const prefix = nl.substring(0, 5);
+          if (!_globalPrefixMap.has(prefix)) _globalPrefixMap.set(prefix, entry);
+          if (!_subjectPrefixMaps.get(subj).has(prefix)) _subjectPrefixMaps.get(subj).set(prefix, entry);
+        }
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processFormulas(chdata.formulas, null, ch);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processFormulas(chdata.formulas, sec, ch);
         }
       }
     }
   }
-  return results;
 }
 
+/**
+ * Returns all formulas across all subjects and chapters.
+ * Optimized with lazy caching.
+ */
+function getAllFormulas() {
+  _ensureIndexes();
+  return [..._formulaCache];
+}
+
+/**
+ * Finds a formula by its unique ID.
+ * Optimized with Map-based O(1) lookup.
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
+/**
+ * Resolves a related formula by name or prefix, prioritized by subject.
+ * Optimized with Map-based lookups.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Exact match in current subject
+  let hit = _subjectNameMaps.get(currentSubject)?.get(nl);
+  if (hit) return hit;
+
+  // 2. Exact match globally
+  hit = _globalNameMap.get(nl);
+  if (hit) return hit;
+
+  if (name.length >= 5) {
+    const prefix = nl.substring(0, 5);
+    // 3. Prefix match in current subject
+    hit = _subjectPrefixMaps.get(currentSubject)?.get(prefix);
+    if (hit) return hit;
+
+    // 4. Prefix match globally
+    hit = _globalPrefixMap.get(prefix);
+    if (hit) return hit;
   }
-  return hit || null;
+
+  return null;
 }
