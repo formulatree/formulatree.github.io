@@ -120,3 +120,12 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(kbd => {
+      if (kbd.textContent === '⌘K') kbd.textContent = 'Ctrl+K';
+    });
+  }
+});
