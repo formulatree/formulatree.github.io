@@ -83,40 +83,105 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+let _allFormulasCache = null;
+let _idMap = null;
+let _globalNameMap = null;
+let _subjectNameMaps = null;
+let _globalPrefixMap = null;
+let _subjectPrefixMaps = null;
+
+/**
+ * Lazy-initializes high-performance indexes for formula retrieval.
+ * Optimizes linear scans into O(1) Map lookups while maintaining
+ * functional parity with the original first-match-wins priority.
+ */
+function _ensureIndexes() {
+  if (_allFormulasCache) return;
+
+  _allFormulasCache = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _subjectNameMaps = new Map();
+  _globalPrefixMap = new Map();
+  _subjectPrefixMaps = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    const subjectMap = new Map();
+    const subjectPrefixMap = new Map();
+    _subjectNameMaps.set(subj, subjectMap);
+    _subjectPrefixMaps.set(subj, subjectPrefixMap);
+
+    const processFormulas = (formulas, ch, sec) => {
+      for (const f of formulas) {
+        const formulaObj = { subject: subj, section: sec, chapter: ch, ...f };
+        if (!sec) delete formulaObj.section;
+
+        _allFormulasCache.push(formulaObj);
+
+        // Maintain first-match parity for ID map
+        if (!_idMap.has(f.id)) _idMap.set(f.id, formulaObj);
+
+        const nl = f.name.toLowerCase();
+        // Maintain first-match parity for global name map
+        if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, formulaObj);
+        // Subject-specific name map
+        if (!subjectMap.has(nl)) subjectMap.set(nl, formulaObj);
+
+        if (f.name.length >= 5) {
+          const prefix = nl.substring(0, 5);
+          // Maintain first-match parity for global prefix map
+          if (!_globalPrefixMap.has(prefix)) _globalPrefixMap.set(prefix, formulaObj);
+          // Subject-specific prefix map
+          if (!subjectPrefixMap.has(prefix)) subjectPrefixMap.set(prefix, formulaObj);
+        }
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processFormulas(chdata.formulas, ch);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processFormulas(chdata.formulas, ch, sec);
         }
       }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  return [..._allFormulasCache];
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
+
+  // 1. Exact match: Subject-specific first
+  const subjectMap = _subjectNameMaps.get(currentSubject);
+  let hit = subjectMap ? subjectMap.get(nl) : null;
+
+  // 2. Exact match: Global fallback
+  if (!hit) hit = _globalNameMap.get(nl);
+
+  // 3. Prefix match (min 5 chars)
   if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+    const prefix = nl.substring(0, 5);
+    // 3a. Subject-specific prefix
+    const subjectPrefixMap = _subjectPrefixMaps.get(currentSubject);
+    hit = subjectPrefixMap ? subjectPrefixMap.get(prefix) : null;
+
+    // 3b. Global prefix fallback
+    if (!hit) hit = _globalPrefixMap.get(prefix);
   }
+
   return hit || null;
 }
