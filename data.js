@@ -120,3 +120,24 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Keyboard accessibility for custom roles
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target.closest('[role="button"], [role="option"]');
+    if (target && !['BUTTON', 'A', 'INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+      if (e.key === ' ') e.preventDefault();
+      target.click();
+    }
+  }
+});
+
+// Platform detection for search shortcut hint
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(k => {
+      if (k.textContent === '\u2318K') k.textContent = 'Ctrl+K';
+    });
+  }
+});
