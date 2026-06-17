@@ -120,3 +120,33 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// ── Global UX & Accessibility ──
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Update shortcut hints for non-Mac platforms
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(kbd => {
+      if (kbd.textContent.includes('⌘')) {
+        kbd.textContent = kbd.textContent.replace('⌘', 'Ctrl+');
+      }
+    });
+  }
+});
+
+// Global keyboard listener for custom interactive roles
+document.addEventListener('keydown', (e) => {
+  const target = e.target;
+  const isButton = target.getAttribute('role') === 'button';
+  const isOption = target.getAttribute('role') === 'option';
+
+  if ((isButton || isOption) && (e.key === 'Enter' || e.key === ' ')) {
+    // Avoid double-activation if the element is already a native button or link
+    const nativeTags = ['BUTTON', 'A', 'INPUT', 'TEXTAREA'];
+    if (nativeTags.includes(target.tagName)) return;
+
+    e.preventDefault();
+    target.click();
+  }
+});
