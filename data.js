@@ -120,3 +120,28 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// UX Enhancements: Platform-aware shortcuts and accessibility listeners
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(kbd => {
+      if (kbd.textContent.includes('⌘')) {
+        kbd.textContent = kbd.textContent.replace('⌘', 'Ctrl+');
+      }
+    });
+  }
+});
+
+// Accessibility: Global Enter/Space activation for custom roles
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if (role === 'button' || role === 'option') {
+      if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        if (e.key === ' ') e.preventDefault(); // Prevent scrolling
+        e.target.click();
+      }
+    }
+  }
+});
