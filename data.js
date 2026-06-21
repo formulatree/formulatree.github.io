@@ -120,3 +120,31 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global keyboard listener for accessibility
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target;
+    if (target.getAttribute('role') === 'button' || target.getAttribute('role') === 'option') {
+      // Avoid double activation for native buttons/links if any
+      if (!['BUTTON', 'A', 'INPUT', 'TEXTAREA'].includes(target.tagName)) {
+        e.preventDefault();
+        target.click();
+      }
+    }
+  }
+});
+
+// Platform detection for keyboard shortcut hints
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(kbd => {
+      if (kbd.textContent === '⌘K') {
+        kbd.textContent = 'Ctrl+K';
+        const btn = kbd.closest('.search-btn');
+        if (btn) btn.setAttribute('aria-label', 'Search formulas (Ctrl+K)');
+      }
+    });
+  }
+});
