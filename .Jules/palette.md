@@ -1,0 +1,3 @@
+## 2026-06-22 - Custom Interactive Roles and Platform-Aware Shortcuts
+**Learning:** Elements with custom roles like "button" or "option" need explicit keyboard listeners for "Enter" and "Space" to be accessible, but these listeners must exclude native interactive tags (A, BUTTON, etc.) to prevent double-triggering. Additionally, providing platform-specific shortcut hints (Ctrl+K vs ⌘K) significantly improves user intuition.
+**Action:** Use a global keyboard listener for custom roles with a blacklist for native tags. Detect platform via navigator.platform to swap shortcut hints and update ARIA labels accordingly.

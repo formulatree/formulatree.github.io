@@ -120,3 +120,31 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// ── Platform-aware Shortcut Hints & Global Listeners ──
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('.search-btn kbd').forEach(kbd => {
+      kbd.textContent = 'Ctrl+K';
+    });
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      btn.setAttribute('aria-label', 'Search formulas (Ctrl+K)');
+    });
+  }
+});
+
+// Global Keyboard Listener for custom roles
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target;
+    const role = target.getAttribute('role');
+    if (role === 'button' || role === 'option') {
+      const tag = target.tagName.toUpperCase();
+      if (['BUTTON', 'A', 'INPUT', 'TEXTAREA'].indexOf(tag) === -1) {
+        e.preventDefault();
+        target.click();
+      }
+    }
+  }
+});
