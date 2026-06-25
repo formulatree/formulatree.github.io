@@ -120,3 +120,39 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global Micro-UX enhancements
+document.addEventListener('DOMContentLoaded', () => {
+  // Update keyboard shortcut hints for non-Mac users
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('.search-btn kbd').forEach(kbd => {
+      if (kbd.textContent === '⌘K') kbd.textContent = 'Ctrl+K';
+    });
+    // Update aria-label of search buttons if present
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      btn.setAttribute('aria-label', 'Search formulas (Ctrl+K)');
+    });
+  } else {
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      btn.setAttribute('aria-label', 'Search formulas (⌘K)');
+    });
+  }
+});
+
+// Global listener for keyboard activation of custom roles
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target;
+    const tagName = target.tagName;
+    // Skip if user is typing in a form field or if it's a native interactive element
+    if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT' || tagName === 'BUTTON' || tagName === 'A') return;
+
+    const role = target.getAttribute('role');
+    if (role === 'button' || role === 'option') {
+      // Prevent scrolling for spacebar on buttons
+      if (e.key === ' ' && role === 'button') e.preventDefault();
+      target.click();
+    }
+  }
+});
