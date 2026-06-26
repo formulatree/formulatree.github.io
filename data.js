@@ -120,3 +120,14 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Handle Enter and Space for custom role="button" or "option"
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target.closest('[role="button"], [role="option"]');
+    if (target && !['BUTTON', 'A', 'INPUT', 'TEXTAREA'].includes(target.tagName)) {
+      if (e.key === ' ') e.preventDefault();
+      target.click();
+    }
+  }
+});
