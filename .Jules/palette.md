@@ -1,0 +1,3 @@
+## 2026-06-26 - Accessibility Retrofitting Pattern
+**Learning:** For a static site using non-semantic interactive elements (divs for cards, headers for toggles), accessibility can be significantly improved by adding `role="button"` and `tabindex="0"` along with a global `keydown` listener for `Enter` and `Space`. Managing ARIA states (`aria-expanded`, `aria-selected`) within existing JavaScript transition functions ensures screen reader synchronization.
+**Action:** Always implement a global keyboard listener when using custom interactive roles, and ensure state-changing functions update corresponding ARIA attributes. Standardize `aria-label` for icon-only buttons like search or close.
