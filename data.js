@@ -83,40 +83,104 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// BOLT OPTIMIZATION: Memoized cache and Map-based indexing for O(1) retrieval.
+// This significantly improves performance for search and related-formula lookups.
+let _formulaCache = null;
+let _idMap = new Map();
+let _globalNameMap = new Map();
+let _subjectNameMaps = new Map(); // Map<subject, Map<lowerName, formula>>
+let _globalPrefixMap = new Map();
+let _subjectPrefixMaps = new Map(); // Map<subject, Map<prefix, formula>>
+
+function _ensureIndexes() {
+  if (_formulaCache) return;
+  _formulaCache = [];
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    const subjectNameMap = new Map();
+    const subjectPrefixMap = new Map();
+    _subjectNameMaps.set(subj, subjectNameMap);
+    _subjectPrefixMaps.set(subj, subjectPrefixMap);
+
+    const processChapter = (ch, chdata, sec) => {
+      for (const f of chdata.formulas) {
+        // Maintain exact property order for parity
+        const flat = sec
+          ? { subject: subj, section: sec, chapter: ch, ...f }
+          : { subject: subj, chapter: ch, ...f };
+
+        _formulaCache.push(flat);
+
+        // Index by ID
+        if (!_idMap.has(f.id)) _idMap.set(f.id, flat);
+
+        // Index by Name (case-insensitive)
+        const nl = f.name.toLowerCase();
+        if (!subjectNameMap.has(nl)) subjectNameMap.set(nl, flat);
+        if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, flat);
+
+        // Index by Prefix for fuzzy matching (min 5 chars)
+        if (nl.length >= 5) {
+          const prefix = nl.substring(0, 5);
+          if (!subjectPrefixMap.has(prefix)) subjectPrefixMap.set(prefix, flat);
+          if (!_globalPrefixMap.has(prefix)) _globalPrefixMap.set(prefix, flat);
+        }
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processChapter(ch, chdata);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processChapter(ch, chdata, sec);
         }
       }
     }
   }
-  return results;
 }
 
+/**
+ * Returns all formulas flattened into a single array.
+ * BOLT: Memoized to O(1) after first call.
+ */
+function getAllFormulas() {
+  _ensureIndexes();
+  return [..._formulaCache];
+}
+
+/**
+ * Finds a formula by its ID.
+ * BOLT: Optimized to O(1) via Map lookup.
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
+/**
+ * Resolves a formula name to a formula object, prioritizing current subject.
+ * BOLT: Optimized to O(1) via layered Map lookups.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Subject-specific exact match
+  const subjectNameMap = _subjectNameMaps.get(currentSubject);
+  if (subjectNameMap && subjectNameMap.has(nl)) return subjectNameMap.get(nl);
+
+  // 2. Global exact match
+  if (_globalNameMap.has(nl)) return _globalNameMap.get(nl);
+
+  // 3. Prefix matches (fallback)
+  if (nl.length >= 5) {
+    const prefix = nl.substring(0, 5);
+    const subjectPrefixMap = _subjectPrefixMaps.get(currentSubject);
+    if (subjectPrefixMap && subjectPrefixMap.has(prefix)) return subjectPrefixMap.get(prefix);
+    if (_globalPrefixMap.has(prefix)) return _globalPrefixMap.get(prefix);
   }
-  return hit || null;
+
+  return null;
 }
