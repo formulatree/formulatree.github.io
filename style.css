@@ -771,6 +771,15 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
 
+[role="button"], [role="tab"], [role="option"] {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ── Footer ── */
 .footer {
   border-top: 1px solid var(--border);
