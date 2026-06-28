@@ -120,3 +120,30 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Global Keyboard Accessibility
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if (['button', 'tab', 'option'].includes(role)) {
+      if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        e.target.click();
+      }
+    }
+  }
+});
+
+// Platform detection for shortcuts
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(k => {
+      if (k.textContent === '⌘K') k.textContent = 'Ctrl+K';
+    });
+    const searchBtn = document.querySelector('.search-btn');
+    if (searchBtn) {
+      searchBtn.setAttribute('aria-label', 'Search formulas (Shortcut: Ctrl+K)');
+    }
+  }
+});
