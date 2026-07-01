@@ -120,3 +120,37 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// --- Palette UX Enhancements ---
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Platform-aware search shortcut hints
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      const kbd = btn.querySelector('kbd');
+      if (kbd && kbd.textContent === '⌘K') {
+        kbd.textContent = 'Ctrl+K';
+      }
+      btn.setAttribute('aria-label', 'Search formulas (Ctrl+K)');
+    });
+  }
+});
+
+// Global keyboard listener for custom interactive elements
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target;
+    const role = target.getAttribute('role');
+    if (['button', 'option', 'tab'].includes(role)) {
+      // Prevent default behavior (especially for Space scrolling)
+      if (e.key === ' ') e.preventDefault();
+
+      // Don't trigger if it's a native interactive element that already handles Enter/Space
+      const nativeTags = ['BUTTON', 'A', 'INPUT', 'TEXTAREA'];
+      if (!nativeTags.includes(target.tagName)) {
+        target.click();
+      }
+    }
+  }
+});
