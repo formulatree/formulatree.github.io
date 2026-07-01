@@ -83,40 +83,97 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// --- BOLT OPTIMIZATION: Memoized cache and Map-based indexing for O(1) lookups ---
+let _formulaCache = null;
+const _idMap = new Map();
+const _globalNameMap = new Map();
+const _subjectNameMaps = new Map(); // Map<Subject, Map<Name, Formula>>
+const _globalPrefixMap = new Map();
+const _subjectPrefixMaps = new Map(); // Map<Subject, Map<Prefix, Formula>>
+
+function _ensureIndexes() {
+  if (_formulaCache) return;
+  _formulaCache = [];
+
+  // Flatten all formulas and build indexes following "first-match" priority
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
-    if (sdata.chapters) {
-      for (const [ch, chdata] of Object.entries(sdata.chapters)) {
+    const processChapters = (chapters, section) => {
+      for (const [ch, chdata] of Object.entries(chapters)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
-      }
-    } else if (sdata.sections) {
-      for (const [sec, secdata] of Object.entries(sdata.sections)) {
-        for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
+          // Maintaining property order: subject, [section], chapter, ...f
+          const formula = { subject: subj, ...(section && { section }), chapter: ch, ...f };
+          _formulaCache.push(formula);
+
+          // Index by ID
+          if (!_idMap.has(f.id)) _idMap.set(f.id, formula);
+
+          const nl = f.name.toLowerCase();
+
+          // Index by exact name (subject-specific and global)
+          if (!_subjectNameMaps.has(subj)) _subjectNameMaps.set(subj, new Map());
+          if (!_subjectNameMaps.get(subj).has(nl)) _subjectNameMaps.get(subj).set(nl, formula);
+          if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, formula);
+
+          // Index by prefix (first 5 chars) for fuzzy related matching
+          if (nl.length >= 5) {
+            const prefix = nl.substring(0, 5);
+            if (!_subjectPrefixMaps.has(subj)) _subjectPrefixMaps.set(subj, new Map());
+            if (!_subjectPrefixMaps.get(subj).has(prefix)) _subjectPrefixMaps.get(subj).set(prefix, formula);
+            if (!_globalPrefixMap.has(prefix)) _globalPrefixMap.set(prefix, formula);
           }
         }
       }
+    };
+
+    if (sdata.chapters) {
+      processChapters(sdata.chapters);
+    } else if (sdata.sections) {
+      for (const [sec, secdata] of Object.entries(sdata.sections)) {
+        processChapters(secdata.chapters, sec);
+      }
     }
   }
-  return results;
 }
 
+/**
+ * Returns all formulas across all subjects and chapters.
+ * Optimized with memoization.
+ */
+function getAllFormulas() {
+  _ensureIndexes();
+  return [..._formulaCache];
+}
+
+/**
+ * Returns a formula by its unique ID.
+ * Optimized with O(1) Map lookup.
+ */
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
+/**
+ * Resolves a related formula name to a formula object.
+ * Priority: Subject-specific exact > Global exact > Subject-specific prefix > Global prefix.
+ * Optimized with O(1) Map lookups.
+ */
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  const subjNameMap = _subjectNameMaps.get(currentSubject);
+  if (subjNameMap && subjNameMap.has(nl)) return subjNameMap.get(nl);
+
+  if (_globalNameMap.has(nl)) return _globalNameMap.get(nl);
+
+  if (name.length >= 5) {
+    const prefix = nl.substring(0, 5);
+    const subjPrefixMap = _subjectPrefixMaps.get(currentSubject);
+    if (subjPrefixMap && subjPrefixMap.has(prefix)) return subjPrefixMap.get(prefix);
+
+    if (_globalPrefixMap.has(prefix)) return _globalPrefixMap.get(prefix);
   }
-  return hit || null;
+
+  return null;
 }
