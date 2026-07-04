@@ -120,3 +120,47 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// --- Palette UX Enhancements ---
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    // Update shortcut hints for non-Mac users
+    document.querySelectorAll('kbd').forEach(kbd => {
+      if (kbd.textContent.includes('⌘K')) {
+        kbd.textContent = kbd.textContent.replace('⌘K', 'Ctrl+K');
+      }
+    });
+
+    // Update search button aria-labels
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      const label = btn.getAttribute('aria-label');
+      if (label && label.includes('⌘K')) {
+         // It might not have it yet, but just in case
+      } else if (label) {
+         btn.setAttribute('aria-label', label + ' (Ctrl+K)');
+      }
+    });
+  } else {
+    // For Mac users, ensure aria-label includes the shortcut if not already there
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      const label = btn.getAttribute('aria-label');
+      if (label && !label.includes('⌘K')) {
+        btn.setAttribute('aria-label', label + ' (⌘K)');
+      }
+    });
+  }
+
+  // Global keyboard accessibility for custom roles
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const role = e.target.getAttribute('role');
+      if (role === 'button' || role === 'option' || role === 'tab') {
+        // Prevent default space scrolling
+        if (e.key === ' ') e.preventDefault();
+        e.target.click();
+      }
+    }
+  });
+});
