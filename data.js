@@ -83,40 +83,98 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// --- BOLT OPTIMIZATION: High-performance data retrieval via indexing and memoization ---
+let _formulaCache = null;
+let _idMap = null;
+let _globalNameMap = null;
+let _subjectNameMaps = null; // Map of subject -> Map of name -> formula
+let _globalPrefixMap = null;
+let _subjectPrefixMaps = null; // Map of subject -> Map of prefix -> formula
+
+/**
+ * Lazily initializes all indexes for O(1) formula retrieval.
+ */
+function _ensureIndexes() {
+  if (_formulaCache) return;
+
+  _formulaCache = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _subjectNameMaps = new Map();
+  _globalPrefixMap = new Map();
+  _subjectPrefixMaps = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    const subjectNameMap = new Map();
+    const subjectPrefixMap = new Map();
+    _subjectNameMaps.set(subj, subjectNameMap);
+    _subjectPrefixMaps.set(subj, subjectPrefixMap);
+
+    const processFormula = (f, ch, sec = null) => {
+      const formulaObj = { subject: subj, ...(sec ? { section: sec } : {}), chapter: ch, ...f };
+      _formulaCache.push(formulaObj);
+
+      // Index by ID (Priority: first match stays)
+      if (!_idMap.has(f.id)) _idMap.set(f.id, formulaObj);
+
+      const nl = f.name.toLowerCase();
+      // Index by Exact Name (Priority: Subject match > Global match)
+      if (!subjectNameMap.has(nl)) subjectNameMap.set(nl, formulaObj);
+      if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, formulaObj);
+
+      // Index by Prefix (at least 5 chars)
+      if (nl.length >= 5) {
+        const prefix = nl.substring(0, 5);
+        if (!subjectPrefixMap.has(prefix)) subjectPrefixMap.set(prefix, formulaObj);
+        if (!_globalPrefixMap.has(prefix)) _globalPrefixMap.set(prefix, formulaObj);
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        for (const f of chdata.formulas) processFormula(f, ch);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          for (const f of chdata.formulas) processFormula(f, ch, sec);
         }
       }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  return [..._formulaCache];
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Subject-specific exact match
+  const subMap = _subjectNameMaps.get(currentSubject);
+  if (subMap && subMap.has(nl)) return subMap.get(nl);
+
+  // 2. Global exact match
+  if (_globalNameMap.has(nl)) return _globalNameMap.get(nl);
+
+  // 3. Prefix matching (>= 5 chars)
+  if (nl.length >= 5) {
+    const prefix = nl.substring(0, 5);
+    // 3a. Subject-specific prefix match
+    const subPreMap = _subjectPrefixMaps.get(currentSubject);
+    if (subPreMap && subPreMap.has(prefix)) return subPreMap.get(prefix);
+
+    // 3b. Global prefix match
+    if (_globalPrefixMap.has(prefix)) return _globalPrefixMap.get(prefix);
   }
-  return hit || null;
+
+  return null;
 }
