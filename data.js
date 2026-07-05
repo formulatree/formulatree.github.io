@@ -120,3 +120,35 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// --- Palette UX Enhancements ---
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if (['button', 'option', 'tab'].includes(role)) {
+      const nativeTags = ['BUTTON', 'A', 'INPUT', 'TEXTAREA'];
+      if (!nativeTags.includes(e.target.tagName)) {
+        e.preventDefault();
+        e.target.click();
+      }
+    }
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(kbd => {
+      if (kbd.textContent.includes('⌘K')) {
+        kbd.textContent = kbd.textContent.replace('⌘K', 'Ctrl+K');
+      }
+    });
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      let label = btn.getAttribute('aria-label') || btn.innerText.trim();
+      if (!label.includes('Ctrl+K')) {
+        label = label.replace('⌘K', 'Ctrl+K');
+        btn.setAttribute('aria-label', label);
+      }
+    });
+  }
+});
