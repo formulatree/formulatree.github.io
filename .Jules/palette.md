@@ -1,0 +1,3 @@
+## 2026-07-05 - [Accessibility] Global Keyboard Activation and Platform-Aware Shortcuts
+**Learning:** For a static site using custom ARIA roles like `role="button"` or `role="option"`, a global keyboard listener on `document` is an efficient way to provide `Enter`/`Space` activation without duplicating code in every component. Additionally, detecting `navigator.platform` to swap `⌘K` for `Ctrl+K` in both visible text and `aria-label` attributes provides a significantly more polished experience for non-Mac users.
+**Action:** Always implement a global activation listener when using custom interactive roles; use a centralized platform-detection utility to synchronize shortcut hints and accessibility labels across the UI.
