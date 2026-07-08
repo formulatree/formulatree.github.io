@@ -1,0 +1,3 @@
+## 2025-07-08 - Parity Verification and Property Order
+**Learning:** When verifying functional parity between a linear scan and a Map-based lookup using `JSON.stringify`, the order of properties in the resulting objects must be identical. Even if the data is the same, different property insertion orders will cause parity check failures. In this codebase, the `section` property needs to be inserted between `subject` and `chapter` for consistency with the original `getAllFormulas` implementation.
+**Action:** Always match the exact object construction sequence of the original code when implementing memoization or indexing to ensure parity tests pass.
