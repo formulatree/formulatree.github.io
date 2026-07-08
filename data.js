@@ -83,40 +83,92 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// --- BOLT OPTIMIZATION: Memoization and Indexing ---
+let _formulaCache = null;
+let _idMap = null;
+let _globalNameMap = null;
+let _subjectNameMaps = {};
+let _globalPrefixMap = null;
+let _subjectPrefixMaps = {};
+
+function _ensureIndexes() {
+  if (_formulaCache) return;
+  _formulaCache = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _globalPrefixMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
-    if (sdata.chapters) {
-      for (const [ch, chdata] of Object.entries(sdata.chapters)) {
+    _subjectNameMaps[subj] = new Map();
+    _subjectPrefixMaps[subj] = new Map();
+
+    const processChapters = (chapters, section = null) => {
+      for (const [ch, chdata] of Object.entries(chapters)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
-      }
-    } else if (sdata.sections) {
-      for (const [sec, secdata] of Object.entries(sdata.sections)) {
-        for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
+          let entry;
+          if (section) {
+            entry = { subject: subj, section: section, chapter: ch, ...f };
+          } else {
+            entry = { subject: subj, chapter: ch, ...f };
+          }
+          _formulaCache.push(entry);
+
+          // Populate Indexes
+          if (!_idMap.has(f.id)) _idMap.set(f.id, entry);
+
+          const nl = f.name.toLowerCase();
+          if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, entry);
+          if (!_subjectNameMaps[subj].has(nl)) _subjectNameMaps[subj].set(nl, entry);
+
+          if (nl.length >= 5) {
+            const pref = nl.substring(0, 5);
+            if (!_globalPrefixMap.has(pref)) _globalPrefixMap.set(pref, entry);
+            if (!_subjectPrefixMaps[subj].has(pref)) _subjectPrefixMaps[subj].set(pref, entry);
           }
         }
       }
+    };
+
+    if (sdata.chapters) {
+      processChapters(sdata.chapters);
+    } else if (sdata.sections) {
+      for (const [sec, secdata] of Object.entries(sdata.sections)) {
+        processChapters(secdata.chapters, sec);
+      }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  return [..._formulaCache];
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Exact match in current subject
+  let hit = _subjectNameMaps[currentSubject] ? _subjectNameMaps[currentSubject].get(nl) : null;
+  if (hit) return hit;
+
+  // 2. Global exact match
+  hit = _globalNameMap.get(nl);
+  if (hit) return hit;
+
+  // 3. Prefix match (5 chars)
+  if (nl.length >= 5) {
+    const pref = nl.substring(0, 5);
+    hit = _subjectPrefixMaps[currentSubject] ? _subjectPrefixMaps[currentSubject].get(pref) : null;
+    if (hit) return hit;
+    hit = _globalPrefixMap.get(pref);
+    if (hit) return hit;
   }
-  return hit || null;
+
+  return null;
 }
