@@ -120,3 +120,28 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+
+// --- Palette UX Enhancements ---
+document.addEventListener('keydown', e => {
+  const target = e.target;
+  const role = target.getAttribute('role');
+  if (['button', 'option', 'tab'].includes(role) && (e.key === 'Enter' || e.key === ' ')) {
+    if (['BUTTON', 'A', 'INPUT', 'TEXTAREA'].includes(target.tagName)) return;
+    e.preventDefault();
+    target.click();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(k => {
+      if (k.textContent === '⌘K') k.textContent = 'Ctrl+K';
+    });
+    const searchBtn = document.querySelector('.search-btn');
+    if (searchBtn && searchBtn.getAttribute('aria-label') === 'Search formulas, equations, and topics') {
+      searchBtn.setAttribute('aria-label', 'Search formulas, equations, and topics (Ctrl+K)');
+    }
+  }
+});
