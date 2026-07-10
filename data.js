@@ -120,3 +120,30 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// --- Palette UX Enhancements ---
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(el => {
+      if (el.textContent === '⌘K') el.textContent = 'Ctrl+K';
+    });
+    const searchBtn = document.querySelector('.search-btn');
+    if (searchBtn && searchBtn.getAttribute('aria-label') === 'Search formulas, equations, and topics') {
+      searchBtn.setAttribute('aria-label', 'Search formulas, equations, and topics (Ctrl+K)');
+    }
+  }
+});
+
+document.addEventListener('keydown', e => {
+  const target = e.target;
+  const isCustomInteractive = target.getAttribute('role') === 'button' ||
+                              target.getAttribute('role') === 'option' ||
+                              target.getAttribute('role') === 'tab';
+  const isNativeInteractive = ['BUTTON', 'A', 'INPUT', 'TEXTAREA'].includes(target.tagName);
+
+  if (isCustomInteractive && !isNativeInteractive && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    target.click();
+  }
+});
