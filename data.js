@@ -83,40 +83,107 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// BOLT OPTIMIZATION: Performance-indexed data retrieval
+let _formulaCache = null;
+let _idMap = null;
+let _globalNameMap = null;
+let _subjectNameMaps = null; // { Subject: Map(name.toLowerCase() -> formula) }
+let _globalPrefixMap = null; // 5-char prefix -> first match
+let _subjectPrefixMaps = null; // { Subject: Map(prefix -> first match) }
+
+function _ensureIndexes() {
+  if (_formulaCache) return;
+
+  _formulaCache = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _subjectNameMaps = {};
+  _globalPrefixMap = new Map();
+  _subjectPrefixMaps = {};
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
+    _subjectNameMaps[subj] = new Map();
+    _subjectPrefixMaps[subj] = new Map();
+
+    const processChapter = (ch, chdata, sec = null) => {
+      for (const f of chdata.formulas) {
+        let entry;
+        if (sec) {
+          entry = { subject: subj, section: sec, chapter: ch, ...f };
+        } else {
+          entry = { subject: subj, chapter: ch, ...f };
+        }
+
+        _formulaCache.push(entry);
+
+        // Standard lookup by ID
+        if (!_idMap.has(f.id)) _idMap.set(f.id, entry);
+
+        const nl = f.name.toLowerCase();
+        // Global exact name match
+        if (!_globalNameMap.has(nl)) _globalNameMap.set(nl, entry);
+        // Subject-specific exact name match
+        if (!_subjectNameMaps[subj].has(nl)) _subjectNameMaps[subj].set(nl, entry);
+
+        // Prefix matching (min 5 chars) for resolveGlobalRelated fallback
+        if (nl.length >= 5) {
+          const prefix = nl.substring(0, 5);
+          if (!_globalPrefixMap.has(prefix)) _globalPrefixMap.set(prefix, entry);
+          if (!_subjectPrefixMaps[subj].has(prefix)) _subjectPrefixMaps[subj].set(prefix, entry);
+        }
+      }
+    };
+
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
-        for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
-        }
+        processChapter(ch, chdata);
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
-          for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
-          }
+          processChapter(ch, chdata, sec);
         }
       }
     }
   }
-  return results;
+}
+
+function getAllFormulas() {
+  _ensureIndexes();
+  return [..._formulaCache]; // Return shallow copy to protect cache
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Exact match in current subject
+  if (_subjectNameMaps[currentSubject]) {
+    const hit = _subjectNameMaps[currentSubject].get(nl);
+    if (hit) return hit;
   }
-  return hit || null;
+
+  // 2. Global exact match
+  const globalHit = _globalNameMap.get(nl);
+  if (globalHit) return globalHit;
+
+  // 3. Prefix match (5 chars)
+  if (nl.length >= 5) {
+    const prefix = nl.substring(0, 5);
+    // Subject prefix
+    if (_subjectPrefixMaps[currentSubject]) {
+      const subPrefHit = _subjectPrefixMaps[currentSubject].get(prefix);
+      if (subPrefHit) return subPrefHit;
+    }
+    // Global prefix
+    const globalPrefHit = _globalPrefixMap.get(prefix);
+    if (globalPrefHit) return globalPrefHit;
+  }
+
+  return null;
 }
