@@ -120,3 +120,35 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+
+// --- Palette UX Enhancements ---
+document.addEventListener('DOMContentLoaded', () => {
+  // Update keyboard shortcut hint for non-Mac platforms
+  const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(k => {
+      if (k.textContent.includes('⌘')) {
+        k.textContent = k.textContent.replace('⌘', 'Ctrl+');
+      }
+    });
+    document.querySelectorAll('.search-btn').forEach(b => {
+      const label = b.getAttribute('aria-label');
+      if (label) b.setAttribute('aria-label', label + ' (Ctrl+K)');
+    });
+  }
+
+  // Global keyboard listener for elements with ARIA roles acting as buttons
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const role = e.target.getAttribute('role');
+      if (role === 'button' || role === 'option' || role === 'tab') {
+        // Prevent default only if it's not a native button/link
+        if (!['BUTTON', 'A', 'INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+          e.preventDefault();
+          e.target.click();
+        }
+      }
+    }
+  });
+});
