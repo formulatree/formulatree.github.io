@@ -1,0 +1,6 @@
+## 2026-07-13 - Keyboard Accessibility and Platform Shortcuts
+**Learning:** For a static app with custom interactive elements (like divs acting as buttons/options), global accessibility can be significantly improved by a single shared keyboard listener in a central data/utility file. Using  allows for platform-accurate keyboard shortcut hints, though modern apps should consider  where available.
+**Action:** When adding ARIA roles like  or  to non-interactive tags, always include  and a corresponding keyboard listener for /. Standardize  across all pages for a consistent screen reader experience.
+## 2026-07-13 - Keyboard Accessibility and Platform Shortcuts
+**Learning:** For a static app with custom interactive elements (like divs acting as buttons/options), global accessibility can be significantly improved by a single shared keyboard listener in a central data/utility file. Using navigator.platform allows for platform-accurate keyboard shortcut hints.
+**Action:** When adding ARIA roles like "button" or "option" to non-interactive tags, always include tabindex="0" and a corresponding keyboard listener for Enter/Space. Standardize aria-label across all pages for a consistent screen reader experience.
