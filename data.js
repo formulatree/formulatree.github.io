@@ -120,3 +120,34 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// --- Palette UX Enhancements ---
+document.addEventListener('DOMContentLoaded', () => {
+  // Global keyboard listener for elements with custom ARIA roles
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const role = e.target.getAttribute('role');
+      if (['button', 'option', 'tab'].includes(role)) {
+        if (['BUTTON', 'A', 'INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+        e.preventDefault();
+        e.target.click();
+      }
+    }
+  });
+
+  // Update kbd shortcut and aria-label for non-Mac platforms
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(kbd => {
+      if (kbd.textContent.includes('⌘')) {
+        kbd.textContent = kbd.textContent.replace('⌘', 'Ctrl+');
+      }
+    });
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      const ariaLabel = btn.getAttribute('aria-label');
+      if (ariaLabel && ariaLabel.includes('⌘')) {
+        btn.setAttribute('aria-label', ariaLabel.replace('⌘', 'Ctrl+'));
+      }
+    });
+  }
+});
