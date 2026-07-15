@@ -1,0 +1,3 @@
+## 2025-05-15 - Global Keyboard Listener for Custom Roles
+**Learning:** In a static application where `div` and `span` elements are frequently used as interactive components (with `onclick`), standard keyboard accessibility (Enter/Space) is often missing. A global listener in the central `data.js` file targeting elements with `role="button"`, `role="option"`, or `role="tab"` ensures consistent interaction across all pages without duplicating logic.
+**Action:** Always include a global `keydown` listener when using custom ARIA roles for interactive elements to ensure parity between mouse and keyboard users.

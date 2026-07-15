@@ -36,7 +36,7 @@ const SUBJECTS = {
   },
   Chemistry: {
     color: "#fb7185",
-    icon: "⚗",
+    icon: "🧪",
     iconBg: "rgba(251,113,133,0.12)",
     desc: "Physical, Inorganic & Organic chemistry",
     sections: {
@@ -120,3 +120,41 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// --- Palette UX Enhancements ---
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Platform-specific keyboard shortcut hints
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(k => {
+      if (k.textContent.includes('⌘')) {
+        k.textContent = k.textContent.replace('⌘', 'Ctrl+');
+      }
+    });
+    const hint = isMac ? ' (⌘K)' : ' (Ctrl+K)';
+    document.querySelectorAll('.search-btn[aria-label]').forEach(b => {
+      let label = b.getAttribute('aria-label');
+      if (!label.includes(hint)) {
+        b.setAttribute('aria-label', label + hint);
+      }
+    });
+  }
+
+  // 2. Global keyboard listener for custom interactive roles
+  // Allows Enter and Space to activate elements with role="button", role="option", or role="tab"
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const target = e.target;
+      const role = target.getAttribute('role');
+      if (['button', 'option', 'tab'].includes(role)) {
+        // Prevent default space scrolling
+        if (e.key === ' ') e.preventDefault();
+
+        // Native interactive elements already handle Enter/Space
+        if (['BUTTON', 'A', 'INPUT', 'TEXTAREA'].includes(target.tagName)) return;
+
+        target.click();
+      }
+    }
+  });
+});
