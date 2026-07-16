@@ -36,7 +36,7 @@ const SUBJECTS = {
   },
   Chemistry: {
     color: "#fb7185",
-    icon: "⚗",
+    icon: "🧪",
     iconBg: "rgba(251,113,133,0.12)",
     desc: "Physical, Inorganic & Organic chemistry",
     sections: {
@@ -120,3 +120,24 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const shortcut = isMac ? ' ⌘K' : 'Ctrl+K';
+  const hint = isMac ? '(⌘K)' : '(Ctrl+K)';
+  document.querySelectorAll('.search-btn kbd').forEach(k => k.textContent = shortcut.trim());
+  document.querySelectorAll('.search-btn').forEach(b => {
+    const label = b.getAttribute('aria-label') || 'Search formulas';
+    b.setAttribute('aria-label', `${label} ${hint}`);
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const role = e.target.getAttribute('role');
+    if (role === 'button' || role === 'option' || role === 'tab') {
+      e.preventDefault();
+      e.target.click();
+    }
+  }
+});

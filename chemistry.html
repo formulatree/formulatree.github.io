@@ -19,9 +19,9 @@
     <a href="mathematics.html" class="nav-link">Mathematics</a>
     <a href="chemistry.html" class="nav-link active">Chemistry</a>
   </nav>
-  <button class="search-btn" onclick="openSearch()">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    Search <kbd>⌘K</kbd>
+  <button class="search-btn" onclick="openSearch()" aria-label="Search formulas, equations, and topics">
+    <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    Search <kbd aria-hidden="true">⌘K</kbd>
   </button>
 </header>
 <main>
@@ -31,7 +31,7 @@
         <a href="index.html">Home</a><span class="sep">/</span><span class="current">Chemistry</span>
       </div>
       <div class="page-title-row">
-        <div class="page-icon" style="background:rgba(251,113,133,0.12);">⚗</div>
+        <div class="page-icon" style="background:rgba(251,113,133,0.12);">🧪</div>
         <div class="page-title">Chemistry</div>
       </div>
       <div class="page-sub" id="pageSub">Physical · Inorganic · Organic — 21 chapters · 189 formulas</div>
@@ -50,7 +50,7 @@
 <div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)">
   <div class="search-modal">
     <div class="search-input-row">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <svg aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input class="search-input" id="searchInput" placeholder="Search chemistry formulas…" autocomplete="off">
     </div>
     <div class="search-results" id="searchResults"><div class="search-empty">Start typing to search…</div></div>
@@ -60,7 +60,7 @@
 <div class="pill-popup" id="pillPopup" style="display:none">
   <div class="pill-popup-title">
     <span id="pillPopupTitle"></span>
-    <button class="pill-popup-close" onclick="closePillPopup()">&#x2715;</button>
+    <button class="pill-popup-close" aria-label="Close" onclick="closePillPopup()">&#x2715;</button>
   </div>
   <div class="pill-popup-body" id="pillPopupBody"></div>
 </div>
@@ -106,11 +106,11 @@ function renderFormulaCard(f, i) {
   }).join('');
   const jeeHtml = (f.jee || []).map(j => `<span class="jee-pill">${j}</span>`).join('');
   return `<div class="formula-card fade-up" id="fc-${f.id}">
-    <div class="formula-header" onclick="toggleCard('${f.id}')">
+    <div class="formula-header" role="button" tabindex="0" onclick="toggleCard('${f.id}')">
       <span class="formula-num">${String(i+1).padStart(2,'0')}</span>
       <span class="formula-name">${f.name}</span>
       <span class="formula-eq-preview" style="color:${color};background:${color}18">${f.equation}</span>
-      <svg class="formula-toggle" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      <svg class="formula-toggle" aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
     <div class="formula-body">
       <div class="formula-eq-full" style="color:${color};border-color:${color}30">${f.equation}</div>
@@ -131,7 +131,7 @@ function renderChapters() {
   updateBreadcrumb(null);
   document.getElementById('mainView').innerHTML = `<div class="chapters-grid">
     ${Object.entries(chapters).map(([name, data]) => `
-      <div class="chapter-card fade-up" style="--chapter-color:${color}" onclick="openChapter('${esc(name)}')">
+      <div class="chapter-card fade-up" role="button" tabindex="0" style="--chapter-color:${color}" onclick="openChapter('${esc(name)}')">
         <span class="chapter-name">${name}</span>
         <span class="chapter-count">${data.formulas.length}</span>
       </div>`).join('')}
@@ -203,9 +203,9 @@ document.getElementById('searchInput').addEventListener('input', function() {
   const all = getAllFormulas();
   const matches = all.filter(f => f.name.toLowerCase().includes(q) || f.equation.toLowerCase().includes(q) || f.explanation.toLowerCase().includes(q)).slice(0,10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
-  const icons = { Physics: '⛛', Mathematics: '∑', Chemistry: '⚗' };
-  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
-    <div class="search-result-icon">${icons[f.subject]||'\uD83D\uDCDA'}</div>
+  const icons = { Physics: '⚛', Mathematics: '∑', Chemistry: '🧪' };
+  results.innerHTML = matches.map(f => `<div class="search-result" role="option" tabindex="0" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
+    <div class="search-result-icon">${icons[f.subject]||'📖'}</div>
     <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} · ${f.section ? f.section+' · ' : ''}${f.chapter}</div></div>
   </div>`).join('');
 });
