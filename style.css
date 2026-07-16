@@ -780,6 +780,17 @@ body {
   font-size: 13px;
 }
 
+
+/* ── Accessibility ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+[role="button"], [role="option"], [role="tab"], .chapter-card, .formula-header {
+  cursor: pointer;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .subjects-grid { grid-template-columns: 1fr; }
