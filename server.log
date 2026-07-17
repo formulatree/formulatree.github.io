@@ -1,0 +1,6 @@
+127.0.0.1 - - [17/Jul/2026 14:47:51] "HEAD / HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:48:36] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:48:36] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:48:36] "GET /data.js HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:48:41] "GET /physics.html?chapter=Optics&id=opt1 HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jul/2026 14:48:41] "GET /popup_defs.js HTTP/1.1" 200 -
