@@ -120,3 +120,18 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// A global keyboard listener enables 'Enter' and 'Space' activation for elements with role="button", role="option", or role="tab"
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target;
+    if (target && target.tagName !== 'BUTTON' && target.tagName !== 'INPUT' && target.tagName !== 'SELECT' && target.tagName !== 'TEXTAREA') {
+      if (target.getAttribute('role') === 'button' || target.getAttribute('role') === 'option' || target.getAttribute('role') === 'tab') {
+        if (e.key === ' ') {
+          e.preventDefault();
+        }
+        target.click();
+      }
+    }
+  }
+});
