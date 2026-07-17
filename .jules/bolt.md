@@ -1,0 +1,3 @@
+## 2026-07-17 - Duplicate ID Handling in Flat Arrays
+**Learning:** In static files like `data.js`, certain keys (such as `id` or exact names) might contain duplicate values across different categories/sections. Standard linear operations like `Array.prototype.find` naturally return the first occurrence. Transforming these linear lookups into fast O(1) Map lookups must preserve this behavior by only adding the first encountered instance of any key to the Map.
+**Action:** When building index Maps for flat arrays, always check for existing keys via `map.has(key)` before adding entries, ensuring the first-match order is strictly preserved.
