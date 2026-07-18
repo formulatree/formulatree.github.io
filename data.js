@@ -36,7 +36,7 @@ const SUBJECTS = {
   },
   Chemistry: {
     color: "#fb7185",
-    icon: "⚗",
+    icon: "🧪",
     iconBg: "rgba(251,113,133,0.12)",
     desc: "Physical, Inorganic & Organic chemistry",
     sections: {
@@ -120,3 +120,43 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '');
+  const suffix = isMac ? ' (⌘K)' : ' (Ctrl+K)';
+
+  // Update kbd elements
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(el => {
+      if (el.textContent.includes('⌘K')) {
+        el.textContent = 'Ctrl+K';
+      }
+    });
+  }
+
+  // Update search button aria-labels
+  document.querySelectorAll('.search-btn').forEach(btn => {
+    const baseLabel = btn.getAttribute('aria-label') || 'Search formulas, equations, and topics';
+    btn.setAttribute('aria-label', baseLabel + suffix);
+  });
+
+  // Centralized keyboard accessibility listener for role="button", role="option", etc.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const active = document.activeElement;
+      if (!active) return;
+
+      const tag = active.tagName.toLowerCase();
+      if (tag === 'button' || tag === 'input' || tag === 'select' || tag === 'textarea' || (tag === 'a' && active.hasAttribute('href'))) {
+        return;
+      }
+
+      const role = active.getAttribute('role');
+      if (role === 'button' || role === 'option' || role === 'tab' || active.hasAttribute('tabindex')) {
+        e.preventDefault();
+        active.click();
+      }
+    }
+  });
+});
