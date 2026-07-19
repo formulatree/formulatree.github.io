@@ -120,3 +120,44 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Manage platform-specific accessibility and shortcut hints
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  const shortcutHint = isMac ? '⌘K' : 'Ctrl+K';
+  const ariaLabelSuffix = isMac ? ' (⌘K)' : ' (Ctrl+K)';
+
+  // Update kbd elements inside search-btn to match platform
+  document.querySelectorAll('.search-btn kbd').forEach(kbd => {
+    kbd.textContent = shortcutHint;
+    kbd.setAttribute('aria-hidden', 'true');
+  });
+
+  // Hide decorative SVG icons in search buttons for screen readers
+  document.querySelectorAll('.search-btn svg').forEach(svg => {
+    svg.setAttribute('aria-hidden', 'true');
+  });
+
+  // Add descriptive aria-label to search buttons with shortcut hint
+  document.querySelectorAll('.search-btn').forEach(btn => {
+    btn.setAttribute('aria-label', 'Search formulas, equations, and topics' + ariaLabelSuffix);
+  });
+
+  // 2. Centralized keyboard activation listener for custom interactive roles (button, option, tab)
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.hasAttribute('role')) {
+      const role = e.target.getAttribute('role');
+      if (['button', 'option', 'tab'].includes(role)) {
+        // Exclude native interactive controls to avoid duplicate clicks
+        const nativeInteractive = ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'].includes(e.target.tagName);
+        if (!nativeInteractive) {
+          if (e.key === ' ') {
+            e.preventDefault(); // Prevent standard page scroll on Spacebar
+          }
+          e.target.click();
+        }
+      }
+    }
+  });
+});
