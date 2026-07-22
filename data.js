@@ -120,3 +120,23 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = (navigator.platform && navigator.platform.toUpperCase().indexOf('MAC') >= 0) ||
+                (navigator.userAgent && navigator.userAgent.toUpperCase().indexOf('MAC') >= 0);
+  const kbdText = isMac ? '⌘K' : 'Ctrl+K';
+  const ariaSuffix = isMac ? ' (⌘K)' : ' (Ctrl+K)';
+
+  // Update kbd elements inside .search-btn
+  const kbds = document.querySelectorAll('.search-btn kbd');
+  kbds.forEach(kbd => {
+    kbd.textContent = kbdText;
+  });
+
+  // Update button aria-labels
+  const btns = document.querySelectorAll('.search-btn');
+  btns.forEach(btn => {
+    const baseLabel = btn.getAttribute('aria-label') || 'Search formulas, equations, and topics';
+    btn.setAttribute('aria-label', baseLabel + ariaSuffix);
+  });
+});
