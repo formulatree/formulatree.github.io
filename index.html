@@ -18,10 +18,10 @@
     <a href="mathematics.html" class="nav-link">Mathematics</a>
     <a href="chemistry.html" class="nav-link">Chemistry</a>
   </nav>
-  <button class="search-btn" onclick="openSearch()">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+  <button class="search-btn" onclick="openSearch()" aria-label="Search formulas, equations, and topics">
+    <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     Search formulas
-    <kbd>⌘K</kbd>
+    <kbd aria-hidden="true">⌘K</kbd>
   </button>
 </header>
 
@@ -65,7 +65,7 @@
 
       <a href="chemistry.html" class="subject-card" style="--card-color: #fb7185;">
         <div class="card-header">
-          <div class="card-icon" style="background: rgba(251,113,133,0.12);">⚗</div>
+          <div class="card-icon" style="background: rgba(251,113,133,0.12);">🧪</div>
           <div class="card-title">Chemistry</div>
         </div>
         <p class="card-desc">Physical, Inorganic &amp; Organic — 21 chapters spanning mole concept to NMR, from periodic trends to reaction mechanisms.</p>
@@ -98,7 +98,7 @@
 
 <script src="data.js"></script>
 <script>
-const SUBJECT_ICONS = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
+const SUBJECT_ICONS = { Physics: '⚛', Mathematics: '∑', Chemistry: '🧪' };
 const SUBJECT_PAGES = { Physics: 'physics.html', Mathematics: 'mathematics.html', Chemistry: 'chemistry.html' };
 
 function openSearch() {
@@ -145,7 +145,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
     const page = SUBJECT_PAGES[f.subject] || 'index.html';
     const sectionDisplay = f.section ? `${f.section} · ` : '';
     const sectionParam = f.section ? `&section=${encodeURIComponent(f.section)}` : '';
-    return `<div class="search-result" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}${sectionParam}'">
+    return `<div class="search-result" role="option" tabindex="0" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}${sectionParam}'">
       <div class="search-result-icon">${SUBJECT_ICONS[f.subject] || '📖'}</div>
       <div>
         <div class="search-result-name">${f.name}</div>
