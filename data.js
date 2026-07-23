@@ -36,7 +36,7 @@ const SUBJECTS = {
   },
   Chemistry: {
     color: "#fb7185",
-    icon: "⚗",
+    icon: "🧪",
     iconBg: "rgba(251,113,133,0.12)",
     desc: "Physical, Inorganic & Organic chemistry",
     sections: {
@@ -120,3 +120,40 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+
+// Centralized Accessibility and Platform-Specific UI Manager
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Platform Detection and Shortcut Hint Standardization
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0 || navigator.userAgent.toUpperCase().indexOf('MAC') >= 0;
+  if (!isMac) {
+    document.querySelectorAll('kbd').forEach(kbd => {
+      if (kbd.textContent === '⌘K') {
+        kbd.textContent = 'Ctrl+K';
+      }
+    });
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      btn.setAttribute('aria-label', 'Search formulas, equations, and topics (Ctrl+K)');
+    });
+  }
+
+  // 2. Centralized Keyboard Event Handler for Custom Interactive Roles
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const target = e.target;
+      if (!target) return;
+
+      // Ignore native interactive elements to prevent duplicate clicks (they handle Enter/Space natively)
+      const tag = target.tagName.toLowerCase();
+      if (tag === 'button' || tag === 'input' || tag === 'select' || tag === 'textarea' || tag === 'a') {
+        return;
+      }
+
+      const role = target.getAttribute('role');
+      if (role === 'button' || role === 'option' || role === 'tab' || target.hasAttribute('tabindex')) {
+        e.preventDefault();
+        target.click();
+      }
+    }
+  });
+});
