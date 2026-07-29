@@ -120,3 +120,20 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    const shortcut = isMac ? '⌘K' : 'Ctrl+K';
+    const labelShortcut = isMac ? ' (⌘K)' : ' (Ctrl+K)';
+
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      const kbd = btn.querySelector('kbd');
+      if (kbd) {
+        kbd.textContent = shortcut;
+      }
+      const baseLabel = 'Search formulas, equations, and topics';
+      btn.setAttribute('aria-label', baseLabel + labelShortcut);
+    });
+  });
+}
