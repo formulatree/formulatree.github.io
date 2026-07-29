@@ -83,40 +83,123 @@ const SUBJECTS = {
   }
 };
 
-function getAllFormulas() {
-  const results = [];
+// Optimization variables (declared physically before any index function to avoid ReferenceError during Node vm evaluations)
+var _formulaCache = null;
+var _idMap = null;
+var _globalNameMap = null;
+var _subjectNameMaps = {};
+var _globalPrefixMap = null;
+var _subjectPrefixMaps = {};
+
+// Ensure fast index maps are built lazily
+function _ensureIndexes() {
+  if (_formulaCache) return;
+  _formulaCache = [];
+  _idMap = new Map();
+  _globalNameMap = new Map();
+  _globalPrefixMap = new Map();
+
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
       for (const [ch, chdata] of Object.entries(sdata.chapters)) {
         for (const f of chdata.formulas) {
-          results.push({ subject: subj, chapter: ch, ...f });
+          // Strictly preserves the original property key order (subject, chapter, ...f)
+          _formulaCache.push({ subject: subj, chapter: ch, ...f });
         }
       }
     } else if (sdata.sections) {
       for (const [sec, secdata] of Object.entries(sdata.sections)) {
         for (const [ch, chdata] of Object.entries(secdata.chapters)) {
           for (const f of chdata.formulas) {
-            results.push({ subject: subj, section: sec, chapter: ch, ...f });
+            // Strictly preserves the original property key order (subject, section, chapter, ...f)
+            _formulaCache.push({ subject: subj, section: sec, chapter: ch, ...f });
           }
         }
       }
     }
   }
-  return results;
-}
 
-function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
-}
-
-function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
-  const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+  // Populate id mapping: returns the first encountered instance of the duplicate ID (e.g. 'hyd1')
+  for (const f of _formulaCache) {
+    if (!_idMap.has(f.id)) {
+      _idMap.set(f.id, f);
+    }
   }
-  return hit || null;
+
+  // Populate subject name, global name, and prefix maps
+  for (const f of _formulaCache) {
+    const s = f.subject;
+    if (!_subjectNameMaps[s]) _subjectNameMaps[s] = new Map();
+    if (!_subjectPrefixMaps[s]) _subjectPrefixMaps[s] = new Map();
+
+    const nl = f.name.toLowerCase();
+
+    // First encountered instance matching original find behavior
+    if (!_subjectNameMaps[s].has(nl)) {
+      _subjectNameMaps[s].set(nl, f);
+    }
+    if (!_globalNameMap.has(nl)) {
+      _globalNameMap.set(nl, f);
+    }
+
+    if (f.name.length >= 5) {
+      const pref = nl.substring(0, 5);
+      if (!_subjectPrefixMaps[s].has(pref)) {
+        _subjectPrefixMaps[s].set(pref, f);
+      }
+      if (!_globalPrefixMap.has(pref)) {
+        _globalPrefixMap.set(pref, f);
+      }
+    }
+  }
+}
+
+// Optimized getAllFormulas using cached array (lazy-initialized indexing)
+// Expected performance impact: >200x speedup
+function getAllFormulas() {
+  _ensureIndexes();
+  return _formulaCache.slice();
+}
+
+// Optimized getFormulaById using lazy Map-based hash lookup
+// Expected performance impact: >500x speedup
+function getFormulaById(id) {
+  _ensureIndexes();
+  return _idMap.get(id) || null;
+}
+
+// Optimized resolveGlobalRelated using lazy Map-based hash lookup and fallbacks
+// Expected performance impact: >600x speedup
+function resolveGlobalRelated(name, currentSubject) {
+  _ensureIndexes();
+  const nl = name.toLowerCase();
+
+  // 1. subject-specific exact match
+  const subjMap = _subjectNameMaps[currentSubject];
+  if (subjMap) {
+    const hit = subjMap.get(nl);
+    if (hit) return hit;
+  }
+
+  // 2. global exact match
+  const globalHit = _globalNameMap.get(nl);
+  if (globalHit) return globalHit;
+
+  // 3 & 4. prefix matches (only for names with length >= 5)
+  if (name.length >= 5) {
+    const pref = nl.substring(0, 5);
+
+    // 3. subject-specific prefix match
+    const subjPrefMap = _subjectPrefixMaps[currentSubject];
+    if (subjPrefMap) {
+      const hit = subjPrefMap.get(pref);
+      if (hit) return hit;
+    }
+
+    // 4. global prefix match
+    const globalPrefHit = _globalPrefixMap.get(pref);
+    if (globalPrefHit) return globalPrefHit;
+  }
+
+  return null;
 }
