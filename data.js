@@ -120,3 +120,34 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  const shortcutText = isMac ? '⌘K' : 'Ctrl+K';
+  const shortcutAria = isMac ? 'Command K' : 'Control K';
+
+  document.querySelectorAll('.search-btn kbd').forEach(kbd => {
+    kbd.textContent = shortcutText;
+  });
+
+  document.querySelectorAll('.search-btn').forEach(btn => {
+    btn.setAttribute('aria-label', 'Search formulas, equations, and topics (Shortcut: ' + shortcutAria + ')');
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target;
+    if (target && target.hasAttribute('role')) {
+      const role = target.getAttribute('role');
+      if (role === 'button' || role === 'option' || role === 'tab') {
+        const tagName = target.tagName.toLowerCase();
+        if (tagName !== 'button' && tagName !== 'input' && tagName !== 'select' && tagName !== 'textarea' && tagName !== 'a') {
+          e.preventDefault();
+          target.click();
+        }
+      }
+    }
+  }
+});
