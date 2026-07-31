@@ -1,0 +1,3 @@
+## 2026-07-31 - Centralized Keyboard Handlers vs Native Controls
+**Learning:** Adding custom keyboard listener patterns (e.g., triggering `.click()` on Enter/Space on elements with `role="button"`) can cause duplicate click triggering if not carefully isolated. Specifically, standard HTML elements like `<button>`, `<input>`, `<select>`, `<textarea>`, or `<a>` already natively handle keyboard activations. Explicitly including them in custom keydown handlers triggers duplicate activations and page malfunctions.
+**Action:** Always filter out native interactive controls (e.g., tag names BUTTON, INPUT, SELECT, TEXTAREA, A) when listening globally to custom keydown events for roles like button, option, or tab.

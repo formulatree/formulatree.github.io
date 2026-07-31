@@ -36,7 +36,7 @@ const SUBJECTS = {
   },
   Chemistry: {
     color: "#fb7185",
-    icon: "⚗",
+    icon: "🧪",
     iconBg: "rgba(251,113,133,0.12)",
     desc: "Physical, Inorganic & Organic chemistry",
     sections: {
@@ -119,4 +119,42 @@ function resolveGlobalRelated(name, currentSubject) {
     if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
   }
   return hit || null;
+}
+
+
+/* ── Centered Keyboard Action and Platform Accessibility Handlers ── */
+function _initAccessibility() {
+  const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "");
+  const shortcutHint = isMac ? "⌘K" : "Ctrl+K";
+
+  // Update all search buttons aria-label and <kbd> text
+  document.querySelectorAll(".search-btn").forEach(btn => {
+    btn.setAttribute("aria-label", `Search formulas, equations, and topics (${shortcutHint})`);
+    const kbd = btn.querySelector("kbd");
+    if (kbd) kbd.textContent = shortcutHint;
+  });
+
+  // Centralized keyboard action listener for custom interactive roles
+  document.addEventListener("keydown", (e) => {
+    const target = e.target;
+    if (!target) return;
+
+    // Ignore native controls that already handle Enter and Space natively
+    const isNativeControl = ["BUTTON", "INPUT", "SELECT", "TEXTAREA", "A"].includes(target.tagName);
+    if (isNativeControl) return;
+
+    const role = target.getAttribute("role");
+    if (role === "button" || role === "option" || role === "tab") {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        target.click();
+      }
+    }
+  });
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", _initAccessibility);
+} else {
+  _initAccessibility();
 }
