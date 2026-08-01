@@ -120,3 +120,22 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  const shortcutHint = isMac ? '⌘K' : 'Ctrl+K';
+  const ariaLabel = `Search formulas, equations, and topics (${shortcutHint})`;
+
+  document.querySelectorAll('.search-btn').forEach(btn => {
+    btn.setAttribute('aria-label', ariaLabel);
+
+    const svg = btn.querySelector('svg');
+    const svgHtml = svg ? svg.outerHTML : `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`;
+    const kbdHtml = `<kbd aria-hidden="true">${shortcutHint}</kbd>`;
+
+    btn.innerHTML = `${svgHtml} Search formulas ${kbdHtml}`;
+
+    const newSvg = btn.querySelector('svg');
+    if (newSvg) newSvg.setAttribute('aria-hidden', 'true');
+  });
+});
