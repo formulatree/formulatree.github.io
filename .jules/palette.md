@@ -1,0 +1,3 @@
+## 2025-02-14 - Centralized Platform-Aware Keyboard Accessibility Pattern
+**Learning:** Hardcoding macOS-specific shortcuts (like ⌘K) on visual buttons causes confusion for Windows/Linux users, while leaving shortcut cues inside interactive element text without proper screen-reader adjustments results in redundant visual-text announcements.
+**Action:** Centralize search shortcut visualization and accessibility updates in a single, resilient DOMContentLoaded/interactive-ready script. Dynamically rewrite visual tags (like `<kbd>`) to match the platform's native modifier (⌘ vs. Ctrl) and synchronize visual cues with custom screen-reader friendly `aria-label` declarations.
