@@ -120,3 +120,33 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+
+// Centralized platform-aware search button accessibility and visual shortcut hints
+function initSearchButtonAccessibility() {
+  const isMac = typeof navigator !== 'undefined' && (
+    navigator.platform.toUpperCase().indexOf('MAC') >= 0 ||
+    navigator.userAgent.toUpperCase().indexOf('MAC') >= 0
+  );
+  const shortcutText = isMac ? '⌘K' : 'Ctrl+K';
+  const ariaShortcut = isMac ? '(⌘K)' : '(Ctrl+K)';
+
+  document.querySelectorAll('.search-btn').forEach(btn => {
+    const svg = btn.querySelector('svg');
+    if (svg) svg.setAttribute('aria-hidden', 'true');
+
+    const kbd = btn.querySelector('kbd');
+    if (kbd) {
+      kbd.setAttribute('aria-hidden', 'true');
+      kbd.textContent = shortcutText;
+    }
+
+    btn.setAttribute('aria-label', `Search formulas, equations, and topics ${ariaShortcut}`);
+  });
+}
+
+if (document.readyState !== 'loading') {
+  initSearchButtonAccessibility();
+} else {
+  document.addEventListener('DOMContentLoaded', initSearchButtonAccessibility);
+}
