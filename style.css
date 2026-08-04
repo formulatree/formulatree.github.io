@@ -789,3 +789,12 @@ body {
   .hero { padding: 50px 0 40px; }
   .stats-row { gap: 24px; }
 }
+
+/* ── Focus States ── */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}

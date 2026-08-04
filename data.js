@@ -120,3 +120,21 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const target = e.target;
+      if (!target) return;
+      const role = target.getAttribute('role');
+      if (role === 'button' || role === 'option' || role === 'tab') {
+        const tagName = target.tagName.toLowerCase();
+        const isNative = tagName === 'button' || tagName === 'input' || tagName === 'select' || tagName === 'textarea' || (tagName === 'a' && target.hasAttribute('href'));
+        if (!isNative) {
+          e.preventDefault();
+          target.click();
+        }
+      }
+    }
+  });
+}
