@@ -120,3 +120,36 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Centralized Accessibility & Platform-Aware Shortcut Updates
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = (navigator.platform || '').toUpperCase().indexOf('MAC') >= 0;
+  const shortcutText = isMac ? '⌘K' : 'Ctrl+K';
+  const shortcutHint = isMac ? '(⌘K)' : '(Ctrl+K)';
+
+  // Update search buttons with platform-specific accessible label and shortcut text
+  const searchBtns = document.querySelectorAll('.search-btn');
+  searchBtns.forEach(btn => {
+    btn.setAttribute('aria-label', `Search formulas, equations, and topics ${shortcutHint}`);
+    const kbd = btn.querySelector('kbd');
+    if (kbd) {
+      kbd.textContent = shortcutText;
+      kbd.setAttribute('aria-hidden', 'true');
+    }
+  });
+
+  // Centralized keyboard activation for custom interactive roles (excluding native controls)
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const role = e.target.getAttribute('role');
+      if (role === 'button' || role === 'option' || role === 'tab') {
+        const tag = e.target.tagName.toLowerCase();
+        // Exclude native interactive controls which natively handle Space/Enter to avoid double click
+        if (!['button', 'input', 'select', 'textarea', 'a'].includes(tag)) {
+          e.preventDefault();
+          e.target.click();
+        }
+      }
+    }
+  });
+});
