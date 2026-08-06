@@ -1,0 +1,3 @@
+## 2026-08-06 - Exact Search-Retain First Match Priority for Indexing
+**Learning:** In static-data-driven applications where duplicate IDs may exist (e.g., duplicate 'id' values like 'hyd1' through 'hyd9'), simple Map-based lookup optimizations can break functional parity with the original `Array.prototype.find()` if they overwrite keys with later elements. Map indexing must explicitly skip over keys that are already present in the Map to preserve the first-match-wins linear scan behavior.
+**Action:** Always traverse in the original tree order and populate Map keys with `.has()` guards to guarantee first-match wins parity for duplicates.
