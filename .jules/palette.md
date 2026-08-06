@@ -1,0 +1,3 @@
+## 2026-08-06 - Info-Pill Keyboard Activation Coordinates
+**Learning:** When custom interactive components (like info-pills) are activated via keyboard events (Enter or Space), mouse position coordinates `clientX` and `clientY` are synthetic and evaluate to 0. Standard positioning logic relying on these coordinates will position the popup at the top-left corner of the viewport (0, 0) instead of near the element.
+**Action:** Use a bounding rect fallback (`getBoundingClientRect()`) to calculate valid coordinate positions relative to the triggering element when `clientX` and `clientY` are both 0.

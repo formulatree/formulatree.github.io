@@ -19,9 +19,10 @@
     <a href="mathematics.html" class="nav-link">Mathematics</a>
     <a href="chemistry.html" class="nav-link active">Chemistry</a>
   </nav>
-  <button class="search-btn" onclick="openSearch()">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    Search <kbd>⌘K</kbd>
+  <button class="search-btn" onclick="openSearch()" aria-label="Search formulas, equations, and topics">
+    <svg aria-hidden="true" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    Search formulas
+    <kbd aria-hidden="true">⌘K</kbd>
   </button>
 </header>
 <main>
@@ -100,13 +101,13 @@ function renderFormulaCard(f, i) {
   const color = SECTION_COLORS[currentSection];
   const relatedHtml = (f.related || []).map(r => {
     const target = resolveGlobalRelated(r, 'Chemistry');
-    if (target) return `<span class="pill linked" onclick="navigateToFormula('${target.id}','${esc(target.chapter)}','${target.subject}','${target.section||''}')">&#8599; ${r}</span>`;
-    if (typeof POPUP_DEFS !== 'undefined' && POPUP_DEFS[r]) return `<span class="pill info-pill" data-pill="${r.replace(/"/g,'&quot;')}" title="Show definition">&#x2139; ${r}</span>`;
+    if (target) return `<span class="pill linked" role="button" tabindex="0" onclick="navigateToFormula('${target.id}','${esc(target.chapter)}','${target.subject}','${target.section||''}')">&#8599; ${r}</span>`;
+    if (typeof POPUP_DEFS !== 'undefined' && POPUP_DEFS[r]) return `<span class="pill info-pill" role="button" tabindex="0" data-pill="${r.replace(/"/g,'&quot;')}" title="Show definition">&#x2139; ${r}</span>`;
     return `<span class="pill">${r}</span>`;
   }).join('');
   const jeeHtml = (f.jee || []).map(j => `<span class="jee-pill">${j}</span>`).join('');
   return `<div class="formula-card fade-up" id="fc-${f.id}">
-    <div class="formula-header" onclick="toggleCard('${f.id}')">
+    <div class="formula-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleCard('${f.id}')">
       <span class="formula-num">${String(i+1).padStart(2,'0')}</span>
       <span class="formula-name">${f.name}</span>
       <span class="formula-eq-preview" style="color:${color};background:${color}18">${f.equation}</span>
@@ -131,7 +132,7 @@ function renderChapters() {
   updateBreadcrumb(null);
   document.getElementById('mainView').innerHTML = `<div class="chapters-grid">
     ${Object.entries(chapters).map(([name, data]) => `
-      <div class="chapter-card fade-up" style="--chapter-color:${color}" onclick="openChapter('${esc(name)}')">
+      <div class="chapter-card fade-up" role="button" tabindex="0" style="--chapter-color:${color}" onclick="openChapter('${esc(name)}')">
         <span class="chapter-name">${name}</span>
         <span class="chapter-count">${data.formulas.length}</span>
       </div>`).join('')}
@@ -203,9 +204,9 @@ document.getElementById('searchInput').addEventListener('input', function() {
   const all = getAllFormulas();
   const matches = all.filter(f => f.name.toLowerCase().includes(q) || f.equation.toLowerCase().includes(q) || f.explanation.toLowerCase().includes(q)).slice(0,10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
-  const icons = { Physics: '⛛', Mathematics: '∑', Chemistry: '⚗' };
-  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
-    <div class="search-result-icon">${icons[f.subject]||'\uD83D\uDCDA'}</div>
+  const icons = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
+  results.innerHTML = matches.map(f => `<div class="search-result" role="option" tabindex="0" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
+    <div class="search-result-icon">${icons[f.subject]||'📖'}</div>
     <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} · ${f.section ? f.section+' · ' : ''}${f.chapter}</div></div>
   </div>`).join('');
 });
@@ -235,7 +236,17 @@ function closePillPopup() {
 }
 document.addEventListener('click', e => {
   const pill = e.target.closest('.info-pill');
-  if (pill) { e.stopPropagation(); showPillPopup(pill.dataset.pill, e.clientX, e.clientY); }
+  if (pill) {
+    e.stopPropagation();
+    let x = e.clientX;
+    let y = e.clientY;
+    if (x === 0 && y === 0) {
+      const rect = pill.getBoundingClientRect();
+      x = rect.left + rect.width / 2;
+      y = rect.bottom;
+    }
+    showPillPopup(pill.dataset.pill, x, y);
+  }
 });
 
 // Init - Safe Deep Linking Route
