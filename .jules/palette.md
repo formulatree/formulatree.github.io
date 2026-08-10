@@ -1,0 +1,3 @@
+## 2026-08-10 - Platform-aware search button shortcut rewrite
+**Learning:** Platform-aware search buttons require dual synchronization of visual hints and accessibility attributes. Updating only visual elements (such as updating `<kbd>` text to Ctrl+K) without updating the button's `aria-label` results in a discrepancy between what is displayed to visual users and what is announced to screen readers.
+**Action:** Centralize search shortcut formatting in a DOMContentLoaded listener in `data.js` to dynamically rewrite both `<kbd>` elements and search button `aria-label` attributes while marking visual elements as `aria-hidden="true"`.

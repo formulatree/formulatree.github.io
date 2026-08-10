@@ -120,3 +120,37 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent || navigator.platform || '');
+  const shortcutText = isMac ? '⌘K' : 'Ctrl+K';
+  const labelShortcut = isMac ? '(⌘K)' : '(Ctrl+K)';
+
+  document.querySelectorAll('.search-btn').forEach(btn => {
+    btn.setAttribute('aria-label', `Search formulas, equations, and topics ${labelShortcut}`);
+    Array.from(btn.childNodes).forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent.trim();
+        if (text === 'Search' || text === 'Search formulas') {
+          node.textContent = ' Search formulas ';
+        }
+      }
+    });
+    const kbd = btn.querySelector('kbd');
+    if (kbd) {
+      kbd.textContent = shortcutText;
+      kbd.setAttribute('aria-hidden', 'true');
+    }
+    const svg = btn.querySelector('svg');
+    if (svg) svg.setAttribute('aria-hidden', 'true');
+  });
+
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.setAttribute('aria-label', 'Search formulas, equations, and topics');
+  }
+
+  document.querySelectorAll('.pill-popup-close').forEach(btn => {
+    btn.setAttribute('aria-label', 'Close popup');
+  });
+});
