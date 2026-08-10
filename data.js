@@ -83,7 +83,64 @@ const SUBJECTS = {
   }
 };
 
+let _allFormulasCache = null;
+let _idMap = null;
+let _subjectNameMap = null;
+let _globalNameMap = null;
+let _subjectPrefixMap = null;
+let _globalPrefixMap = null;
+
+function _ensureIndexes() {
+  if (_idMap) return;
+  _idMap = new Map();
+  _subjectNameMap = new Map();
+  _globalNameMap = new Map();
+  _subjectPrefixMap = new Map();
+  _globalPrefixMap = new Map();
+
+  const all = getAllFormulas();
+  for (let i = 0; i < all.length; i++) {
+    const f = all[i];
+
+    // Store first occurrence of id
+    if (!_idMap.has(f.id)) {
+      _idMap.set(f.id, f);
+    }
+
+    const subjKey = f.subject.toLowerCase();
+    const nameKey = f.name.toLowerCase();
+
+    // Subject name exact match (first occurrence)
+    const subjNameKey = subjKey + '|||' + nameKey;
+    if (!_subjectNameMap.has(subjNameKey)) {
+      _subjectNameMap.set(subjNameKey, f);
+    }
+
+    // Global name exact match (first occurrence)
+    if (!_globalNameMap.has(nameKey)) {
+      _globalNameMap.set(nameKey, f);
+    }
+
+    // Prefix matches for name length >= 5
+    if (nameKey.length >= 5) {
+      const prefixKey = nameKey.substring(0, 5);
+
+      const subjPrefixKey = subjKey + '|||' + prefixKey;
+      if (!_subjectPrefixMap.has(subjPrefixKey)) {
+        _subjectPrefixMap.set(subjPrefixKey, f);
+      }
+
+      if (!_globalPrefixMap.has(prefixKey)) {
+        _globalPrefixMap.set(prefixKey, f);
+      }
+    }
+  }
+}
+
 function getAllFormulas() {
+  if (_allFormulasCache) {
+    return _allFormulasCache;
+  }
   const results = [];
   for (const [subj, sdata] of Object.entries(SUBJECTS)) {
     if (sdata.chapters) {
@@ -102,21 +159,39 @@ function getAllFormulas() {
       }
     }
   }
+  _allFormulasCache = results;
   return results;
 }
 
 function getFormulaById(id) {
-  return getAllFormulas().find(f => f.id === id) || null;
+  _ensureIndexes();
+  return _idMap.get(id) || null;
 }
 
 function resolveGlobalRelated(name, currentSubject) {
-  const all = getAllFormulas();
+  _ensureIndexes();
   const nl = name.toLowerCase();
-  let hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase() === nl);
-  if (!hit) hit = all.find(f => f.name.toLowerCase() === nl);
-  if (!hit && name.length >= 5) {
-    hit = all.find(f => f.subject === currentSubject && f.name.toLowerCase().startsWith(nl.substring(0, 5)));
-    if (!hit) hit = all.find(f => f.name.toLowerCase().startsWith(nl.substring(0, 5)));
+
+  // 1. Subject-specific exact match
+  const subjNameKey = currentSubject.toLowerCase() + '|||' + nl;
+  let hit = _subjectNameMap.get(subjNameKey);
+  if (hit) return hit;
+
+  // 2. Global exact match
+  hit = _globalNameMap.get(nl);
+  if (hit) return hit;
+
+  // 3. Subject-specific prefix match (5 characters)
+  if (name.length >= 5) {
+    const prefix = nl.substring(0, 5);
+    const subjPrefixKey = currentSubject.toLowerCase() + '|||' + prefix;
+    hit = _subjectPrefixMap.get(subjPrefixKey);
+    if (hit) return hit;
+
+    // 4. Global prefix match (5 characters)
+    hit = _globalPrefixMap.get(prefix);
+    if (hit) return hit;
   }
-  return hit || null;
+
+  return null;
 }
