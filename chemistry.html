@@ -101,12 +101,12 @@ function renderFormulaCard(f, i) {
   const relatedHtml = (f.related || []).map(r => {
     const target = resolveGlobalRelated(r, 'Chemistry');
     if (target) return `<span class="pill linked" onclick="navigateToFormula('${target.id}','${esc(target.chapter)}','${target.subject}','${target.section||''}')">&#8599; ${r}</span>`;
-    if (typeof POPUP_DEFS !== 'undefined' && POPUP_DEFS[r]) return `<span class="pill info-pill" data-pill="${r.replace(/"/g,'&quot;')}" title="Show definition">&#x2139; ${r}</span>`;
+    if (typeof POPUP_DEFS !== 'undefined' && POPUP_DEFS[r]) return `<span class="pill info-pill" role="button" tabindex="0" data-pill="${r.replace(/"/g,'&quot;')}" title="Show definition">&#x2139; ${r}</span>`;
     return `<span class="pill">${r}</span>`;
   }).join('');
   const jeeHtml = (f.jee || []).map(j => `<span class="jee-pill">${j}</span>`).join('');
   return `<div class="formula-card fade-up" id="fc-${f.id}">
-    <div class="formula-header" onclick="toggleCard('${f.id}')">
+    <div class="formula-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleCard('${f.id}')">
       <span class="formula-num">${String(i+1).padStart(2,'0')}</span>
       <span class="formula-name">${f.name}</span>
       <span class="formula-eq-preview" style="color:${color};background:${color}18">${f.equation}</span>
@@ -131,7 +131,7 @@ function renderChapters() {
   updateBreadcrumb(null);
   document.getElementById('mainView').innerHTML = `<div class="chapters-grid">
     ${Object.entries(chapters).map(([name, data]) => `
-      <div class="chapter-card fade-up" style="--chapter-color:${color}" onclick="openChapter('${esc(name)}')">
+      <div class="chapter-card fade-up" role="button" tabindex="0" style="--chapter-color:${color}" onclick="openChapter('${esc(name)}')">
         <span class="chapter-name">${name}</span>
         <span class="chapter-count">${data.formulas.length}</span>
       </div>`).join('')}
@@ -156,16 +156,30 @@ function toggleCard(id) {
   const card = document.getElementById('fc-' + id);
   if (!card) return;
   const isOpen = card.classList.contains('open');
-  document.querySelectorAll('.formula-card.open').forEach(c => c.classList.remove('open'));
-  if (!isOpen) card.classList.add('open');
+  document.querySelectorAll('.formula-card.open').forEach(c => {
+    c.classList.remove('open');
+    const header = c.querySelector('.formula-header');
+    if (header) header.setAttribute('aria-expanded', 'false');
+  });
+  if (!isOpen) {
+    card.classList.add('open');
+    const header = card.querySelector('.formula-header');
+    if (header) header.setAttribute('aria-expanded', 'true');
+  }
 }
 
 function openAndScroll(id) {
   setTimeout(() => {
     const card = document.getElementById('fc-' + id);
     if (card) {
-      document.querySelectorAll('.formula-card.open').forEach(c => c.classList.remove('open'));
+      document.querySelectorAll('.formula-card.open').forEach(c => {
+        c.classList.remove('open');
+        const header = c.querySelector('.formula-header');
+        if (header) header.setAttribute('aria-expanded', 'false');
+      });
       card.classList.add('open');
+      const header = card.querySelector('.formula-header');
+      if (header) header.setAttribute('aria-expanded', 'true');
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, 150);
@@ -204,7 +218,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
   const matches = all.filter(f => f.name.toLowerCase().includes(q) || f.equation.toLowerCase().includes(q) || f.explanation.toLowerCase().includes(q)).slice(0,10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
   const icons = { Physics: '⛛', Mathematics: '∑', Chemistry: '⚗' };
-  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
+  results.innerHTML = matches.map(f => `<div class="search-result" role="option" tabindex="0" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
     <div class="search-result-icon">${icons[f.subject]||'\uD83D\uDCDA'}</div>
     <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} · ${f.section ? f.section+' · ' : ''}${f.chapter}</div></div>
   </div>`).join('');
@@ -218,13 +232,18 @@ function handleSearchResult(subject, chapter, id, section) {
   } else { window.location.href = SUBJECT_PAGES[subject] + '?chapter=' + encodeURIComponent(chapter) + '&id=' + id; }
 }
 
-function showPillPopup(name, x, y) {
+function showPillPopup(name, x, y, triggerEl) {
   if (typeof POPUP_DEFS === 'undefined' || !POPUP_DEFS[name]) return;
   document.getElementById('pillPopupTitle').textContent = name;
   document.getElementById('pillPopupBody').textContent = POPUP_DEFS[name];
   const popup = document.getElementById('pillPopup');
   popup.style.display = 'block';
   document.getElementById('pillPopupOverlay').classList.add('open');
+  if ((!x && !y) && triggerEl) {
+    const rect = triggerEl.getBoundingClientRect();
+    x = rect.left;
+    y = rect.bottom;
+  }
   const left = Math.min(x+10, window.innerWidth-356);
   const top = (y+170 > window.innerHeight) ? y-170 : y+10;
   popup.style.left = left + 'px'; popup.style.top = top + 'px';
@@ -235,7 +254,7 @@ function closePillPopup() {
 }
 document.addEventListener('click', e => {
   const pill = e.target.closest('.info-pill');
-  if (pill) { e.stopPropagation(); showPillPopup(pill.dataset.pill, e.clientX, e.clientY); }
+  if (pill) { e.stopPropagation(); showPillPopup(pill.dataset.pill, e.clientX, e.clientY, pill); }
 });
 
 // Init - Safe Deep Linking Route

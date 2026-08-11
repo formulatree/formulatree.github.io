@@ -120,3 +120,38 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Centralized DOMContentLoaded for platform-aware keyboard shortcut indicators and aria-labels
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  const shortcutHint = isMac ? '(⌘K)' : '(Ctrl+K)';
+
+  // Update aria-label and kbd elements on all search buttons
+  document.querySelectorAll('.search-btn').forEach(btn => {
+    btn.setAttribute('aria-label', `Search formulas ${shortcutHint}`);
+    const kbd = btn.querySelector('kbd');
+    if (kbd && !isMac) {
+      kbd.textContent = 'Ctrl+K';
+    }
+  });
+});
+
+// Centralized keydown event listener for custom interactive roles
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const target = e.target;
+    if (!target) return;
+
+    // Exclude native interactive elements
+    const tag = target.tagName;
+    if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || (tag === 'A' && target.hasAttribute('href'))) {
+      return;
+    }
+
+    const role = target.getAttribute('role');
+    if (role === 'button' || role === 'option' || role === 'tab') {
+      e.preventDefault();
+      target.click();
+    }
+  }
+});
