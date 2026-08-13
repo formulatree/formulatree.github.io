@@ -120,3 +120,17 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  const shortcutText = isMac ? '⌘K' : 'Ctrl+K';
+  const labelShortcut = isMac ? '(⌘K)' : '(Ctrl+K)';
+
+  document.querySelectorAll('.search-btn').forEach(btn => {
+    btn.setAttribute('aria-label', `Search formulas ${labelShortcut}`);
+    const kbd = btn.querySelector('kbd');
+    if (kbd) {
+      kbd.textContent = shortcutText;
+    }
+  });
+});
