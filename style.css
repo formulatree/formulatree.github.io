@@ -40,6 +40,36 @@ body {
   min-height: 100vh;
 }
 
+/* ── Focus States for Keyboard Navigation ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+[tabindex="0"]:focus-visible,
+.subject-card:focus-visible,
+.chapter-card:focus-visible,
+.formula-header:focus-visible,
+.search-result:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.search-btn:focus-visible,
+.nav-link:focus-visible,
+.section-tab:focus-visible,
+.back-btn:focus-visible,
+.pill-popup-close:focus-visible {
+  border-radius: 8px;
+}
+
+.pill:focus-visible {
+  border-radius: 100px;
+}
+
 /* ── Header ── */
 .header {
   position: sticky;
