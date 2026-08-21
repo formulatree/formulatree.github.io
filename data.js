@@ -120,3 +120,18 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+    const kbdText = isMac ? '⌘K' : 'Ctrl+K';
+    const ariaText = isMac ? ' (⌘K)' : ' (Ctrl+K)';
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      const kbd = btn.querySelector('kbd');
+      if (kbd) kbd.textContent = kbdText;
+      const baseLabel = btn.getAttribute('aria-label') || 'Search formulas';
+      btn.setAttribute('aria-label', baseLabel + ariaText);
+    });
+  });
+}
