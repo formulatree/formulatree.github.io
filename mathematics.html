@@ -42,11 +42,12 @@
 <footer class="footer">
   <div class="container">FormulaTree · JEE Formula Revision</div>
 </footer>
-<div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)">
+<div class="search-overlay" id="searchOverlay" onclick="closeSearchOutside(event)" role="dialog" aria-modal="true" aria-label="Search formulas">
   <div class="search-modal">
     <div class="search-input-row">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input class="search-input" id="searchInput" placeholder="Search formulas…" autocomplete="off">
+      <input class="search-input" id="searchInput" placeholder="Search formulas…" autocomplete="off" aria-label="Search formulas">
+      <button class="search-close-btn" aria-label="Close search" onclick="closeSearch()">✕</button>
     </div>
     <div class="search-results" id="searchResults"><div class="search-empty">Start typing to search…</div></div>
   </div>
