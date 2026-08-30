@@ -101,6 +101,17 @@
 const SUBJECT_ICONS = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
 const SUBJECT_PAGES = { Physics: 'physics.html', Mathematics: 'mathematics.html', Chemistry: 'chemistry.html' };
 
+let searchSelectedIndex = -1;
+
+function updateSearchSelection(items) {
+  items.forEach((item, index) => {
+    item.classList.toggle('selected', index === searchSelectedIndex);
+    if (index === searchSelectedIndex) {
+      item.scrollIntoView({ block: 'nearest' });
+    }
+  });
+}
+
 function openSearch() {
   document.getElementById('searchOverlay').classList.add('open');
   document.getElementById('searchInput').focus();
@@ -110,6 +121,7 @@ function closeSearch() {
   document.getElementById('searchOverlay').classList.remove('open');
   document.getElementById('searchInput').value = '';
   document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing to search 333 formulas…</div>';
+  searchSelectedIndex = -1;
 }
 
 function closeSearchOutside(e) {
@@ -121,7 +133,28 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeSearch();
 });
 
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  const items = document.querySelectorAll('#searchResults .search-result');
+  if (!items.length) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    searchSelectedIndex = (searchSelectedIndex + 1) % items.length;
+    updateSearchSelection(items);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    searchSelectedIndex = (searchSelectedIndex - 1 + items.length) % items.length;
+    updateSearchSelection(items);
+  } else if (e.key === 'Enter') {
+    if (searchSelectedIndex >= 0 && searchSelectedIndex < items.length) {
+      e.preventDefault();
+      items[searchSelectedIndex].click();
+    }
+  }
+});
+
 document.getElementById('searchInput').addEventListener('input', function() {
+  searchSelectedIndex = -1;
   const q = this.value.toLowerCase().trim();
   const results = document.getElementById('searchResults');
   if (!q) {
