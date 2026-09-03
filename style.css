@@ -649,6 +649,35 @@ body {
 
 .search-input::placeholder { color: var(--text3); }
 
+.search-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.18s;
+  flex-shrink: 0;
+  line-height: 1;
+  font-family: var(--font-body);
+}
+
+.search-close-btn:hover {
+  background: var(--surface2);
+  border-color: var(--border2);
+  color: var(--text);
+}
+
+.search-close-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .search-results {
   max-height: 420px;
   overflow-y: auto;
