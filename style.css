@@ -635,6 +635,26 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.search-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  line-height: 1;
+}
+
+.search-close-btn:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+
 .search-input-row svg { color: var(--text3); flex-shrink: 0; }
 
 .search-input {
