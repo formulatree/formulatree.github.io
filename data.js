@@ -120,3 +120,69 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Keyboard navigation, ARIA attributes, and platform shortcut detection for search overlay
+(function() {
+  function initSearchUX() {
+    const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    if (!isMac) {
+      document.querySelectorAll('.search-btn kbd').forEach(kbd => {
+        kbd.textContent = 'Ctrl+K';
+      });
+    }
+
+    let selectedIndex = -1;
+
+    function updateSelection(items) {
+      items.forEach((item, idx) => {
+        const isSel = idx === selectedIndex;
+        item.classList.toggle('selected', isSel);
+        item.setAttribute('aria-selected', isSel ? 'true' : 'false');
+        if (isSel) {
+          item.scrollIntoView({ block: 'nearest' });
+        }
+      });
+    }
+
+    document.addEventListener('input', (e) => {
+      if (e.target && e.target.id === 'searchInput') {
+        selectedIndex = -1;
+        const results = document.getElementById('searchResults');
+        if (results) results.setAttribute('role', 'listbox');
+        const items = results ? results.querySelectorAll('.search-result') : [];
+        items.forEach(item => {
+          item.setAttribute('role', 'option');
+          item.setAttribute('tabindex', '0');
+          item.setAttribute('aria-selected', 'false');
+        });
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      const searchInput = document.getElementById('searchInput');
+      if (!searchInput || document.activeElement !== searchInput) return;
+      const results = document.getElementById('searchResults');
+      const items = results ? results.querySelectorAll('.search-result') : [];
+      if (!items.length) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex + 1) % items.length;
+        updateSelection(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+        updateSelection(items);
+      } else if (e.key === 'Enter' && selectedIndex >= 0 && items[selectedIndex]) {
+        e.preventDefault();
+        items[selectedIndex].click();
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSearchUX);
+  } else {
+    initSearchUX();
+  }
+})();
