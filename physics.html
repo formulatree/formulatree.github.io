@@ -86,13 +86,13 @@ function renderFormulaCard(f, i) {
   }).join('');
   const jeeHtml = (f.jee || []).map(j => `<span class="jee-pill">${j}</span>`).join('');
   return `<div class="formula-card fade-up" id="fc-${f.id}">
-    <div class="formula-header" onclick="toggleCard('${f.id}')">
+    <div class="formula-header" role="button" tabindex="0" aria-expanded="false" aria-controls="fb-${f.id}" onclick="toggleCard('${f.id}')">
       <span class="formula-num">${String(i+1).padStart(2,'0')}</span>
       <span class="formula-name">${f.name}</span>
       <span class="formula-eq-preview" style="color:${SUBJECT_COLOR};background:rgba(52,211,153,0.08)">${f.equation}</span>
       <svg class="formula-toggle" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
-    <div class="formula-body">
+    <div class="formula-body" id="fb-${f.id}">
       <div class="formula-eq-full" style="color:${SUBJECT_COLOR};border-color:rgba(52,211,153,0.2)">${f.equation}</div>
       <div class="formula-section"><div class="formula-section-label">Explanation</div><div class="formula-section-text">${f.explanation}</div></div>
       <div class="formula-section"><div class="formula-section-label">Derivation / Origin</div><div class="formula-section-text">${f.derived}</div></div>
@@ -130,16 +130,30 @@ function toggleCard(id) {
   const card = document.getElementById('fc-' + id);
   if (!card) return;
   const isOpen = card.classList.contains('open');
-  document.querySelectorAll('.formula-card.open').forEach(c => c.classList.remove('open'));
-  if (!isOpen) card.classList.add('open');
+  document.querySelectorAll('.formula-card').forEach(c => {
+    c.classList.remove('open');
+    const h = c.querySelector('.formula-header');
+    if (h) h.setAttribute('aria-expanded', 'false');
+  });
+  if (!isOpen) {
+    card.classList.add('open');
+    const h = card.querySelector('.formula-header');
+    if (h) h.setAttribute('aria-expanded', 'true');
+  }
 }
 
 function openAndScroll(id) {
   setTimeout(() => {
     const card = document.getElementById('fc-' + id);
     if (card) {
-      document.querySelectorAll('.formula-card.open').forEach(c => c.classList.remove('open'));
+      document.querySelectorAll('.formula-card').forEach(c => {
+        c.classList.remove('open');
+        const h = c.querySelector('.formula-header');
+        if (h) h.setAttribute('aria-expanded', 'false');
+      });
       card.classList.add('open');
+      const h = card.querySelector('.formula-header');
+      if (h) h.setAttribute('aria-expanded', 'true');
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, 150);
