@@ -109,6 +109,22 @@ function getFormulaById(id) {
   return getAllFormulas().find(f => f.id === id) || null;
 }
 
+if (typeof document !== 'undefined') {
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const target = e.target.closest('[role="button"], [role="option"], [role="tab"]');
+      if (target) {
+        const tagName = target.tagName;
+        if (tagName === 'BUTTON' || tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA' || (tagName === 'A' && target.hasAttribute('href'))) {
+          return;
+        }
+        e.preventDefault();
+        target.click();
+      }
+    }
+  });
+}
+
 function resolveGlobalRelated(name, currentSubject) {
   const all = getAllFormulas();
   const nl = name.toLowerCase();
