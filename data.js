@@ -120,3 +120,19 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.userAgent || navigator.platform || '');
+    const shortcutHint = isMac ? '(⌘K)' : '(Ctrl+K)';
+    const kbdText = isMac ? '⌘K' : 'Ctrl+K';
+
+    document.querySelectorAll('.search-btn').forEach(btn => {
+      btn.setAttribute('aria-label', `Search formulas ${shortcutHint}`);
+      const kbd = btn.querySelector('kbd');
+      if (kbd) {
+        kbd.textContent = kbdText;
+      }
+    });
+  });
+}
