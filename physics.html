@@ -64,6 +64,7 @@ const SUBJECT_KEY = 'Physics';
 const SUBJECT_COLOR = '#34d399';
 const SUBJECT_PAGES = { Physics: 'physics.html', Mathematics: 'mathematics.html', Chemistry: 'chemistry.html' };
 let currentChapter = null;
+let selectedIndex = -1;
 const params = new URLSearchParams(location.search);
 const initChapter = params.get('chapter');
 const initId = params.get('id');
@@ -150,11 +151,21 @@ function navigateToFormula(id, chapter, subject) {
   else { window.location.href = SUBJECT_PAGES[subject] + '?chapter=' + encodeURIComponent(chapter) + '&id=' + id; }
 }
 
+function updateSearchSelection(items) {
+  items.forEach((item, index) => {
+    const isSel = index === selectedIndex;
+    item.classList.toggle('selected', isSel);
+    item.setAttribute('aria-selected', isSel ? 'true' : 'false');
+    if (isSel) item.scrollIntoView({ block: 'nearest' });
+  });
+}
+
 function openSearch() {
   document.getElementById('searchOverlay').classList.add('open');
   document.getElementById('searchInput').focus();
 }
 function closeSearch() {
+  selectedIndex = -1;
   document.getElementById('searchOverlay').classList.remove('open');
   document.getElementById('searchInput').value = '';
   document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing to search…</div>';
@@ -163,10 +174,29 @@ function closeSearchOutside(e) { if (e.target === document.getElementById('searc
 
 document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+  const overlay = document.getElementById('searchOverlay');
+  if (overlay && overlay.classList.contains('open')) {
+    const items = document.querySelectorAll('#searchResults .search-result');
+    if (items.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex + 1) % items.length;
+        updateSearchSelection(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+        updateSearchSelection(items);
+      } else if (e.key === 'Enter' && selectedIndex >= 0 && selectedIndex < items.length) {
+        e.preventDefault();
+        items[selectedIndex].click();
+      }
+    }
+  }
   if (e.key === 'Escape') { closeSearch(); closePillPopup(); }
 });
 
 document.getElementById('searchInput').addEventListener('input', function() {
+  selectedIndex = -1;
   const q = this.value.toLowerCase().trim();
   const results = document.getElementById('searchResults');
   if (!q) { results.innerHTML = '<div class="search-empty">Start typing…</div>'; return; }
@@ -176,7 +206,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
   ).slice(0, 10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
   const icons = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
-  results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
+  results.innerHTML = matches.map(f => `<div class="search-result" role="option" tabindex="0" aria-selected="false" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
     <div class="search-result-icon">${icons[f.subject]||'📖'}</div>
     <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} · ${f.chapter}</div></div>
   </div>`).join('');

@@ -99,7 +99,17 @@
 <script src="data.js"></script>
 <script>
 const SUBJECT_ICONS = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
+let selectedIndex = -1;
 const SUBJECT_PAGES = { Physics: 'physics.html', Mathematics: 'mathematics.html', Chemistry: 'chemistry.html' };
+
+function updateSearchSelection(items) {
+  items.forEach((item, index) => {
+    const isSel = index === selectedIndex;
+    item.classList.toggle('selected', isSel);
+    item.setAttribute('aria-selected', isSel ? 'true' : 'false');
+    if (isSel) item.scrollIntoView({ block: 'nearest' });
+  });
+}
 
 function openSearch() {
   document.getElementById('searchOverlay').classList.add('open');
@@ -107,6 +117,7 @@ function openSearch() {
 }
 
 function closeSearch() {
+  selectedIndex = -1;
   document.getElementById('searchOverlay').classList.remove('open');
   document.getElementById('searchInput').value = '';
   document.getElementById('searchResults').innerHTML = '<div class="search-empty">Start typing to search 333 formulas…</div>';
@@ -118,10 +129,29 @@ function closeSearchOutside(e) {
 
 document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+  const overlay = document.getElementById('searchOverlay');
+  if (overlay && overlay.classList.contains('open')) {
+    const items = document.querySelectorAll('#searchResults .search-result');
+    if (items.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex + 1) % items.length;
+        updateSearchSelection(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+        updateSearchSelection(items);
+      } else if (e.key === 'Enter' && selectedIndex >= 0 && selectedIndex < items.length) {
+        e.preventDefault();
+        items[selectedIndex].click();
+      }
+    }
+  }
   if (e.key === 'Escape') closeSearch();
 });
 
 document.getElementById('searchInput').addEventListener('input', function() {
+  selectedIndex = -1;
   const q = this.value.toLowerCase().trim();
   const results = document.getElementById('searchResults');
   if (!q) {
@@ -145,7 +175,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
     const page = SUBJECT_PAGES[f.subject] || 'index.html';
     const sectionDisplay = f.section ? `${f.section} · ` : '';
     const sectionParam = f.section ? `&section=${encodeURIComponent(f.section)}` : '';
-    return `<div class="search-result" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}${sectionParam}'">
+    return `<div class="search-result" role="option" tabindex="0" aria-selected="false" onclick="window.location.href='${page}?chapter=${encodeURIComponent(f.chapter)}&id=${f.id}${sectionParam}'">
       <div class="search-result-icon">${SUBJECT_ICONS[f.subject] || '📖'}</div>
       <div>
         <div class="search-result-name">${f.name}</div>
