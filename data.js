@@ -120,3 +120,29 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+// Platform-aware shortcut hints & accessibility enhancement
+document.addEventListener('DOMContentLoaded', () => {
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
+  const keyHint = isMac ? '⌘K' : 'Ctrl+K';
+
+  document.querySelectorAll('.search-btn kbd').forEach(kbd => {
+    kbd.textContent = keyHint;
+  });
+
+  document.querySelectorAll('.search-btn').forEach(btn => {
+    btn.setAttribute('aria-label', `Search formulas (${keyHint})`);
+  });
+
+  const searchOverlay = document.getElementById('searchOverlay');
+  if (searchOverlay) {
+    searchOverlay.setAttribute('role', 'dialog');
+    searchOverlay.setAttribute('aria-modal', 'true');
+    searchOverlay.setAttribute('aria-label', 'Search formulas');
+  }
+
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.setAttribute('aria-label', 'Search formulas');
+  }
+});
