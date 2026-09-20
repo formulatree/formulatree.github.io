@@ -113,7 +113,10 @@ function renderFormulaCard(f, i) {
       <svg class="formula-toggle" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
     <div class="formula-body">
-      <div class="formula-eq-full" style="color:${color};border-color:${color}30">${f.equation}</div>
+      <div class="formula-eq-full" style="color:${color};border-color:${color}30">
+        <span>${f.equation}</span>
+        <button class="copy-eq-btn" data-eq="${f.equation.replace(/"/g, '&quot;')}" onclick="copyFormula(this)" aria-label="Copy equation" title="Copy equation"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button>
+      </div>
       <div class="formula-section"><div class="formula-section-label">Explanation</div><div class="formula-section-text">${f.explanation}</div></div>
       <div class="formula-section"><div class="formula-section-label">Derivation / Origin</div><div class="formula-section-text">${f.derived}</div></div>
       ${relatedHtml ? `<div class="formula-section"><div class="formula-section-label">Related Formulas</div><div class="pills-row">${relatedHtml}</div></div>` : ''}
