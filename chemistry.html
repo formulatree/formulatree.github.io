@@ -106,14 +106,14 @@ function renderFormulaCard(f, i) {
   }).join('');
   const jeeHtml = (f.jee || []).map(j => `<span class="jee-pill">${j}</span>`).join('');
   return `<div class="formula-card fade-up" id="fc-${f.id}">
-    <div class="formula-header" onclick="toggleCard('${f.id}')">
+    <div class="formula-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleCard('${f.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCard('${f.id}');}">
       <span class="formula-num">${String(i+1).padStart(2,'0')}</span>
       <span class="formula-name">${f.name}</span>
       <span class="formula-eq-preview" style="color:${color};background:${color}18">${f.equation}</span>
       <svg class="formula-toggle" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
     <div class="formula-body">
-      <div class="formula-eq-full" style="color:${color};border-color:${color}30">${f.equation}</div>
+      <div class="formula-eq-full" style="color:${color};border-color:${color}30"><span class="eq-text">${f.equation}</span><button class="copy-eq-btn" onclick="copyFormula(this)" aria-label="Copy equation" title="Copy equation"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
       <div class="formula-section"><div class="formula-section-label">Explanation</div><div class="formula-section-text">${f.explanation}</div></div>
       <div class="formula-section"><div class="formula-section-label">Derivation / Origin</div><div class="formula-section-text">${f.derived}</div></div>
       ${relatedHtml ? `<div class="formula-section"><div class="formula-section-label">Related Formulas</div><div class="pills-row">${relatedHtml}</div></div>` : ''}
@@ -156,16 +156,30 @@ function toggleCard(id) {
   const card = document.getElementById('fc-' + id);
   if (!card) return;
   const isOpen = card.classList.contains('open');
-  document.querySelectorAll('.formula-card.open').forEach(c => c.classList.remove('open'));
-  if (!isOpen) card.classList.add('open');
+  document.querySelectorAll('.formula-card.open').forEach(c => {
+    c.classList.remove('open');
+    const hdr = c.querySelector('.formula-header');
+    if (hdr) hdr.setAttribute('aria-expanded', 'false');
+  });
+  if (!isOpen) {
+    card.classList.add('open');
+    const hdr = card.querySelector('.formula-header');
+    if (hdr) hdr.setAttribute('aria-expanded', 'true');
+  }
 }
 
 function openAndScroll(id) {
   setTimeout(() => {
     const card = document.getElementById('fc-' + id);
     if (card) {
-      document.querySelectorAll('.formula-card.open').forEach(c => c.classList.remove('open'));
+      document.querySelectorAll('.formula-card.open').forEach(c => {
+        c.classList.remove('open');
+        const hdr = c.querySelector('.formula-header');
+        if (hdr) hdr.setAttribute('aria-expanded', 'false');
+      });
       card.classList.add('open');
+      const hdr = card.querySelector('.formula-header');
+      if (hdr) hdr.setAttribute('aria-expanded', 'true');
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, 150);
