@@ -120,3 +120,43 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+function copyFormula(btn) {
+  if (!btn || btn.classList.contains('copied')) return;
+  const eqContainer = btn.closest('.formula-eq-full');
+  const textEl = eqContainer ? eqContainer.querySelector('.formula-eq-text') : null;
+  const eqText = textEl ? textEl.textContent.trim() : (eqContainer ? eqContainer.childNodes[0].textContent.trim() : '');
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(eqText).then(onSuccess, fallbackCopy);
+  } else {
+    fallbackCopy();
+  }
+
+  function fallbackCopy() {
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = eqText;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      onSuccess();
+    } catch (e) {
+      console.error('Failed to copy equation', e);
+    }
+  }
+
+  function onSuccess() {
+    btn.classList.add('copied');
+    btn.setAttribute('aria-label', 'Copied equation');
+    btn.innerHTML = '✓ Copied';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.setAttribute('aria-label', 'Copy equation');
+      btn.innerHTML = 'Copy';
+    }, 1500);
+  }
+}
