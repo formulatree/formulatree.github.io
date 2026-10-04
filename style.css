@@ -789,3 +789,22 @@ body {
   .hero { padding: 50px 0 40px; }
   .stats-row { gap: 24px; }
 }
+
+/* ── Focus States for Accessibility ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+[tabindex="0"]:focus-visible,
+.search-btn:focus-visible,
+.nav-link:focus-visible,
+.section-tab:focus-visible,
+.back-btn:focus-visible,
+.pill:focus-visible,
+.search-result:focus-visible,
+.chapter-card:focus-visible,
+.formula-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

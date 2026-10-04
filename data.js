@@ -120,3 +120,27 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const target = e.target;
+      if (target && target.matches && target.matches('[role="button"], [role="option"], [tabindex="0"]')) {
+        if (!['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'].includes(target.tagName)) {
+          e.preventDefault();
+          target.click();
+        }
+      }
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
+    const shortcutText = isMac ? '⌘K' : 'Ctrl+K';
+    document.querySelectorAll('.search-btn').forEach(function(btn) {
+      const kbd = btn.querySelector('kbd');
+      if (kbd) kbd.textContent = shortcutText;
+      btn.setAttribute('aria-label', 'Search formulas (' + shortcutText + ')');
+    });
+  });
+}
