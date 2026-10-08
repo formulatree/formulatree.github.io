@@ -534,6 +534,53 @@ body {
   margin-bottom: 16px;
   word-break: break-all;
   line-height: 1.7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.copy-eq-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text3);
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.copy-eq-btn:hover {
+  border-color: var(--border2);
+  color: var(--text);
+  background: var(--surface2);
+}
+
+.copy-eq-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.copy-eq-btn .check-icon {
+  display: none;
+}
+
+.copy-eq-btn.copied {
+  border-color: var(--phys);
+  color: var(--phys);
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.copy-eq-btn.copied .copy-icon {
+  display: none;
+}
+
+.copy-eq-btn.copied .check-icon {
+  display: block;
 }
 
 .formula-section {
