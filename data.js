@@ -120,3 +120,24 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+function copyFormula(btn) {
+  if (btn.classList.contains('copied')) return;
+  const container = btn.closest('.formula-eq-full');
+  if (!container) return;
+  const eqTextEl = container.querySelector('.eq-text');
+  const eqText = eqTextEl ? eqTextEl.textContent : '';
+  if (!eqText) return;
+
+  navigator.clipboard.writeText(eqText).then(() => {
+    btn.classList.add('copied');
+    btn.setAttribute('aria-label', 'Copied equation');
+    const origText = btn.innerHTML;
+    btn.innerHTML = '✓ Copied';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.setAttribute('aria-label', 'Copy equation');
+      btn.innerHTML = origText;
+    }, 1500);
+  });
+}
