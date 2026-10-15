@@ -120,3 +120,23 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+function copyFormula(btn) {
+  if (!btn || btn.classList.contains('copied')) return;
+  const container = btn.closest('.formula-eq-full');
+  const eqTextEl = container ? container.querySelector('.eq-text') : null;
+  const textToCopy = eqTextEl ? eqTextEl.textContent.trim() : '';
+  if (!textToCopy) return;
+
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    btn.classList.add('copied');
+    btn.setAttribute('aria-label', 'Copied equation');
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>Copied</span>`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.setAttribute('aria-label', 'Copy equation');
+      btn.innerHTML = origHtml;
+    }, 1500);
+  }).catch(() => {});
+}
