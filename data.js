@@ -120,3 +120,50 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+
+function copyFormula(btn, e) {
+  if (e) e.stopPropagation();
+  if (btn.classList.contains('copied')) return;
+  const eqFull = btn.closest('.formula-eq-full');
+  const eqTextEl = eqFull ? eqFull.querySelector('.eq-text') : null;
+  const textToCopy = eqTextEl ? eqTextEl.textContent.trim() : (eqFull ? eqFull.textContent.replace(/Copy equation|Copied!/g, '').trim() : '');
+
+  if (!textToCopy) return;
+
+  function setCopiedState() {
+    btn.classList.add('copied');
+    btn.setAttribute('aria-label', 'Copied equation');
+    const labelSpan = btn.querySelector('.copy-btn-label');
+    if (labelSpan) labelSpan.textContent = 'Copied!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.setAttribute('aria-label', 'Copy equation');
+      if (labelSpan) labelSpan.textContent = 'Copy';
+    }, 1500);
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(textToCopy).then(setCopiedState).catch(() => {
+      fallbackCopyText(textToCopy, setCopiedState);
+    });
+  } else {
+    fallbackCopyText(textToCopy, setCopiedState);
+  }
+}
+
+function fallbackCopyText(text, cb) {
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.style.position = 'fixed';
+  textArea.style.opacity = '0';
+  document.body.appendChild(textArea);
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    cb();
+  } catch (err) {
+    console.error('Fallback copy failed', err);
+  }
+  document.body.removeChild(textArea);
+}
