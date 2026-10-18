@@ -109,6 +109,48 @@ function getFormulaById(id) {
   return getAllFormulas().find(f => f.id === id) || null;
 }
 
+function copyFormula(btn) {
+  if (!btn || btn.classList.contains('copied')) return;
+  const parent = btn.closest('.formula-eq-full');
+  const textEl = parent ? parent.querySelector('.eq-text') : null;
+  const eqText = textEl ? textEl.textContent.trim() : '';
+  if (!eqText) return;
+
+  const copySuccess = () => {
+    btn.classList.add('copied');
+    btn.setAttribute('aria-label', 'Copied equation');
+    const origSvg = btn.innerHTML;
+    btn.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.setAttribute('aria-label', 'Copy equation');
+      btn.innerHTML = origSvg;
+    }, 1500);
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(eqText).then(copySuccess).catch(() => {
+      fallbackCopy(eqText, copySuccess);
+    });
+  } else {
+    fallbackCopy(eqText, copySuccess);
+  }
+}
+
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    cb();
+  } catch (err) {}
+  document.body.removeChild(ta);
+}
+
 function resolveGlobalRelated(name, currentSubject) {
   const all = getAllFormulas();
   const nl = name.toLowerCase();
