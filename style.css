@@ -475,6 +475,11 @@ body {
   user-select: none;
 }
 
+.formula-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 .formula-num {
   font-family: var(--font-mono);
   font-size: 11px;
