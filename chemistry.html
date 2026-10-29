@@ -105,6 +105,7 @@ function renderFormulaCard(f, i) {
     return `<span class="pill">${r}</span>`;
   }).join('');
   const jeeHtml = (f.jee || []).map(j => `<span class="jee-pill">${j}</span>`).join('');
+  const eqEsc = (f.equation || '').replace(/"/g, '&quot;');
   return `<div class="formula-card fade-up" id="fc-${f.id}">
     <div class="formula-header" onclick="toggleCard('${f.id}')">
       <span class="formula-num">${String(i+1).padStart(2,'0')}</span>
@@ -113,7 +114,10 @@ function renderFormulaCard(f, i) {
       <svg class="formula-toggle" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
     <div class="formula-body">
-      <div class="formula-eq-full" style="color:${color};border-color:${color}30">${f.equation}</div>
+      <div class="formula-eq-full" style="color:${color};border-color:${color}30">
+        <span>${f.equation}</span>
+        <button class="copy-eq-btn" aria-label="Copy equation" data-eq="${eqEsc}" onclick="copyFormula(this, event)">Copy</button>
+      </div>
       <div class="formula-section"><div class="formula-section-label">Explanation</div><div class="formula-section-text">${f.explanation}</div></div>
       <div class="formula-section"><div class="formula-section-label">Derivation / Origin</div><div class="formula-section-text">${f.derived}</div></div>
       ${relatedHtml ? `<div class="formula-section"><div class="formula-section-label">Related Formulas</div><div class="pills-row">${relatedHtml}</div></div>` : ''}
@@ -203,7 +207,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
   const all = getAllFormulas();
   const matches = all.filter(f => f.name.toLowerCase().includes(q) || f.equation.toLowerCase().includes(q) || f.explanation.toLowerCase().includes(q)).slice(0,10);
   if (!matches.length) { results.innerHTML = '<div class="search-empty">No formulas found.</div>'; return; }
-  const icons = { Physics: '⛛', Mathematics: '∑', Chemistry: '⚗' };
+  const icons = { Physics: '⚛', Mathematics: '∑', Chemistry: '⚗' };
   results.innerHTML = matches.map(f => `<div class="search-result" onclick="handleSearchResult('${f.subject}','${esc(f.chapter)}','${f.id}','${f.section||''}')">
     <div class="search-result-icon">${icons[f.subject]||'\uD83D\uDCDA'}</div>
     <div><div class="search-result-name">${f.name}</div><div class="search-result-eq">${f.equation}</div><div class="search-result-path">${f.subject} · ${f.section ? f.section+' · ' : ''}${f.chapter}</div></div>
