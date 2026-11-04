@@ -120,3 +120,19 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+function copyFormula(btn, e) {
+  if (e) e.stopPropagation();
+  const eq = btn.getAttribute('data-eq') || '';
+  navigator.clipboard.writeText(eq).then(() => {
+    const origText = btn.innerHTML;
+    btn.innerHTML = '✓ Copied';
+    btn.setAttribute('aria-label', 'Copied equation');
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = origText;
+      btn.setAttribute('aria-label', 'Copy equation');
+      btn.classList.remove('copied');
+    }, 1500);
+  });
+}
