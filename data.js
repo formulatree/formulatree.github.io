@@ -120,3 +120,33 @@ function resolveGlobalRelated(name, currentSubject) {
   }
   return hit || null;
 }
+
+function copyFormula(btn, e) {
+  if (e) e.stopPropagation();
+  const eq = btn.getAttribute('data-eq');
+  if (!eq) return;
+  const original = btn.textContent;
+  const setCopied = () => {
+    btn.textContent = '✓ Copied';
+    btn.setAttribute('aria-label', 'Copied equation');
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = original;
+      btn.setAttribute('aria-label', 'Copy equation');
+      btn.classList.remove('copied');
+    }, 1500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(eq).then(setCopied).catch(fallback);
+  } else { fallback(); }
+  function fallback() {
+    const ta = document.createElement('textarea');
+    ta.value = eq;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); setCopied(); } catch (_) {}
+    document.body.removeChild(ta);
+  }
+}
